@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avatar Debug Test</title>
+    <style>
+        body { margin: 20px; font-family: Arial, sans-serif; }
+        #container { width: 800px; height: 600px; border: 1px solid #ccc; }
+        .status { margin: 10px 0; padding: 10px; background: #f0f0f0; }
+        .error { background: #ffe0e0; }
+        .success { background: #e0ffe0; }
+    </style>
+</head>
+<body>
+    <h1>Avatar Debug Test</h1>
+    <div id="status"></div>
+    <div id="container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let statusDiv = document.getElementById('status');
+        let container = document.getElementById('container');
+
+        function log(message, type = 'info') {
+            statusDiv.innerHTML += `<div class="${type}">${new Date().toLocaleTimeString()}: ${message}</div>`;
+            console.log(message);
+        }
+
+        // Test basic Three.js functionality
+        log('Testing Three.js...');
+        try {
+            let scene = new THREE.Scene();
+            let camera = new THREE.PerspectiveCamera(75, 800/600, 0.1, 1000);
+            let renderer = new THREE.WebGLRenderer();
+            renderer.setSize(800, 600);
+            container.appendChild(renderer.domElement);
+
+            // Create a simple cube to test rendering
+            let geometry = new THREE.BoxGeometry();
+            let material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+            let cube = new THREE.Mesh(geometry, material);
+            scene.add(cube);
+
+            camera.position.z = 5;
+
+            function animate() {
+                requestAnimationFrame(animate);
+                cube.rotation.x += 0.01;
+                cube.rotation.y += 0.01;
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            log('Three.js basic test successful!', 'success');
+        } catch (error) {
+            log('Three.js error: ' + error.message, 'error');
+        }
+
+        // Test model loading
+        log('Testing model loading...');
+        try {
+            let fbxLoader = new THREE.FBXLoader();
+            fbxLoader.load(
+                'usl_models/female avatar/fbx file clean.fbx',
+                function(fbx) {
+                    log('FBX model loaded successfully!', 'success');
+                    console.log('FBX model:', fbx);
+                },
+                function(progress) {
+                    log('FBX loading progress: ' + (progress.loaded / progress.total * 100) + '%');
+                },
+                function(error) {
+                    log('FBX loading failed: ' + error.message, 'error');
+                    console.error('FBX error:', error);
+                }
+            );
+        } catch (error) {
+            log('FBX loader error: ' + error.message, 'error');
+        }
+    </script>
+</body>
+</html>

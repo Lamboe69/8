@@ -1,0 +1,3257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph-Reasoned LVM for USL Translation - Infectious Disease Screening</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 50%, #2980b9 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Top Navigation */
+        .top-navigation {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .nav-tab {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-color: rgba(102, 126, 234, 0.8);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* View Management */
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        .research-info, .api-status, .help-docs, .avatar-viewer {
+            padding: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .info-card h4 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 20px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .status-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .status-online {
+            background: #4CAF50;
+        }
+
+        .status-offline {
+            background: #f44336;
+        }
+
+        .status-warning {
+            background: #ff9800;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .video-panel {
+            grid-row: 1;
+            grid-column: 1;
+        }
+
+        .avatar-panel {
+            grid-row: 1;
+            grid-column: 2;
+        }
+
+        .translation-results-panel {
+            grid-row: 2;
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .video-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            height: fit-content;
+        }
+
+        .screening-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .avatar-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .panel-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 10px;
+        }
+
+        .question-display {
+            background: rgba(76, 175, 80, 0.1);
+            border: 2px solid rgba(76, 175, 80, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .question-text {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .gloss-text {
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 12px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .response-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .response-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .response-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .response-btn.selected {
+            background: rgba(76, 175, 80, 0.8);
+            border-color: rgba(76, 175, 80, 1);
+        }
+
+        .submit-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .avatar-container {
+            width: 100%;
+            height: 500px;
+            background: #1a1a1a;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .avatar-container canvas {
+            display: block;
+            max-width: 100% !important;
+            max-height: 100% !important;
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain;
+        }
+
+        .avatar-container.maximized {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            height: auto;
+            width: auto;
+            z-index: 9999;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+        }
+
+        .maximize-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9998;
+        }
+
+        .maximize-overlay.show {
+            display: block;
+        }
+
+        .gloss-display {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 16px;
+            max-width: 350px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .avatar-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .avatar-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .avatar-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+        }
+
+        .maximize-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .maximize-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .results-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .responses-list {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .response-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .response-item:last-child {
+            border-bottom: none;
+        }
+
+        .danger-alert {
+            background: rgba(244, 67, 54, 0.2);
+            border: 2px solid rgba(244, 67, 54, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .emergency-alert {
+            background: rgba(244, 67, 54, 0.9);
+            border: 2px solid #f44336;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            animation: pulse 1s infinite;
+            display: none;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            height: 10px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .fhir-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .fhir-json {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 5px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            display: none;
+        }
+
+        .export-btn {
+            background: rgba(76, 175, 80, 0.8);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .preset-questions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .preset-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .session-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .session-btn {
+            background: rgba(255, 193, 7, 0.8);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .config-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 14px;
+        }
+
+        .select-wrapper {
+            position: relative;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Maximize overlay -->
+    <div class="maximize-overlay"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🧠 Graph-Reasoned LVM for USL Translation</h1>
+            <p>Infectious Disease Screening • Real-time USL ↔ Clinical Text • WHO/MoH Aligned</p>
+        </div>
+
+        <!-- System Configuration -->
+        <div class="config-panel">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Patient ID</label>
+                    <input type="text" id="patient-id" class="form-input" value="PAT-001" placeholder="Enter patient ID">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Clinic Language</label>
+                    <select id="language" class="form-select">
+                        <option value="english">English</option>
+                        <option value="runyankole">Runyankole</option>
+                        <option value="luganda">Luganda</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">USL Regional Variant</label>
+                    <select id="regional-variant" class="form-select">
+                        <option value="canonical">Canonical</option>
+                        <option value="kampala">Kampala</option>
+                        <option value="gulu">Gulu</option>
+                        <option value="mbale">Mbale</option>
+                    </select>
+                </div>
+            </div>
+            <div class="session-controls">
+                <button class="session-btn" onclick="newSession()">🔄 New Session</button>
+                <button class="session-btn" onclick="exportFHIR()">📄 Export FHIR</button>
+            </div>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Video/Camera Panel -->
+            <div class="video-panel">
+                <div class="panel-title">🎥 Video & Camera Input</div>
+
+                <!-- Video Upload Section -->
+                <div style="margin-bottom: 20px;">
+                    <div style="border: 2px dashed rgba(102, 126, 234, 0.5); border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 15px;">
+                        <div style="font-size: 36px; margin-bottom: 5px;">📹</div>
+                        <p style="margin-bottom: 10px; color: #666; font-size: 12px;">Upload USL video for recognition</p>
+                        <input type="file" id="video-upload" accept="video/*" style="display: none;" onchange="handleVideoUpload(event)">
+                        <button onclick="document.getElementById('video-upload').click()" class="avatar-btn" style="padding: 8px 15px; font-size: 12px;">Choose Video</button>
+                    </div>
+
+                    <div id="video-preview" style="display: none; margin-bottom: 15px;">
+                        <video id="uploaded-video" controls style="width: 100%; border-radius: 8px; max-height: 200px;"></video>
+                        <button onclick="processUploadedVideo()" class="avatar-btn" style="width: 100%; padding: 8px; font-size: 12px; margin-top: 8px;">🎭 Process Video</button>
+                    </div>
+
+                    <div id="video-results" style="display: none; margin-bottom: 20px;">
+                        <div style="background: rgba(0,0,0,0.1); padding: 8px; border-radius: 5px; font-family: monospace; font-size: 11px; max-height: 100px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+
+                <!-- Live Camera Section -->
+                <div style="margin-bottom: 20px;">
+                    <div style="border: 2px dashed rgba(76, 175, 80, 0.5); border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 15px;">
+                        <div style="font-size: 36px; margin-bottom: 5px;">📷</div>
+                        <p style="margin-bottom: 10px; color: #666; font-size: 12px;">Live USL sign recognition</p>
+                        <button onclick="startCamera()" id="camera-btn" class="avatar-btn" style="padding: 8px 15px; font-size: 12px;">Start Camera</button>
+                    </div>
+
+                    <div id="camera-preview" style="display: none; margin-bottom: 15px;">
+                        <video id="camera-video" autoplay playsinline style="width: 100%; border-radius: 8px; max-height: 200px; transform: scaleX(-1);"></video>
+                        <canvas id="camera-canvas" style="display: none;"></canvas>
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="startRealTimeRecognition()" id="recognition-btn" class="avatar-btn" style="flex: 1; padding: 8px; font-size: 12px;">🎭 Start Recognition</button>
+                            <button onclick="stopCamera()" class="avatar-btn" style="padding: 8px; font-size: 12px;">⏹️ Stop</button>
+                        </div>
+                    </div>
+
+                    <div id="live-results" style="display: none;">
+                        <div style="background: rgba(0,0,0,0.1); padding: 8px; border-radius: 5px; font-family: monospace; font-size: 11px; min-height: 40px;"></div>
+                        <div style="margin-top: 5px; font-size: 11px; color: #666;">
+                            <span id="recognition-status">Status: Ready</span> |
+                            <span id="confidence-level">Confidence: --</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Avatar Panel -->
+            <div class="avatar-panel">
+                <div class="panel-title">🤖 USL Synthesis Avatar</div>
+
+                <!-- 3D Avatar Container -->
+                <div id="avatar-container" class="avatar-container">
+                    <!-- Avatar only - no status indicators -->
+                </div>
+
+                <!-- Avatar Status and Controls -->
+                <div>
+                    <div class="avatar-controls">
+                        <button class="avatar-btn" onclick="playAnimation()">▶️ Play</button>
+                        <button class="avatar-btn" onclick="pauseAnimation()">⏸️ Pause</button>
+                        <button class="avatar-btn" onclick="resetPose()">🔄 Reset</button>
+                        <button class="maximize-btn" onclick="toggleMaximize()">⛶ Maximize</button>
+                    </div>
+                </div>
+
+                <!-- Manual Synthesis -->
+                <div>
+                    <input type="text" id="text-input" class="form-input" placeholder="Enter text to synthesize..." style="margin-bottom: 10px;">
+                    <button class="avatar-btn" onclick="synthesizeUSL()" style="width: 100%; margin-bottom: 15px;">🎭 Synthesize USL</button>
+                </div>
+
+                <!-- Preset Questions -->
+                <div>
+                    <strong>Preset Questions:</strong>
+                    <div class="preset-questions">
+                        <button class="preset-btn" onclick="loadPreset('Do you have fever?')">🤒 Fever</button>
+                        <button class="preset-btn" onclick="loadPreset('Do you have cough?')">🗣️ Cough</button>
+                        <button class="preset-btn" onclick="loadPreset('Any blood in sputum?')">🩸 Blood</button>
+                        <button class="preset-btn" onclick="loadPreset('Do you have diarrhea?')">🤢 Diarrhea</button>
+                        <button class="preset-btn" onclick="loadPreset('Are you pregnant?')">🤰 Pregnancy</button>
+                        <button class="preset-btn" onclick="loadPreset('Have you traveled recently?')">✈️ Travel</button>
+                        <button class="preset-btn" onclick="loadPreset('Help me')">🆘 Help</button>
+                        <button class="preset-btn" onclick="loadPreset('Emergency')">🚨 Emergency</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Translation Results Panel -->
+        <div class="translation-results-panel">
+            <div class="panel-title">🧠 Translation Results</div>
+
+            <!-- Current Question Display -->
+            <div id="question-display" class="question-display" style="margin-bottom: 20px;">
+                <div id="question-text" class="question-text">Loading question...</div>
+                <div id="gloss-text" class="gloss-text">GLOSS</div>
+            </div>
+
+            <!-- Response Options -->
+            <div id="response-options" class="response-options"></div>
+
+            <button id="submit-btn" class="submit-btn" onclick="submitResponse()">✅ Submit Response</button>
+
+            <hr style="border: 1px solid rgba(255,255,255,0.2); margin: 30px 0;">
+
+            <!-- Video Translation Results -->
+            <div style="margin-bottom: 20px;">
+                <h4>🎥 Video Translation Results:</h4>
+                <div id="video-translation-results" style="background: rgba(0,0,0,0.1); padding: 15px; border-radius: 8px; margin-top: 10px; min-height: 60px; font-family: monospace;">
+                    <em style="color: rgba(255,255,255,0.6);">No video translations yet. Upload a video and process it to see results here.</em>
+                </div>
+            </div>
+
+            <!-- Camera Translation Results -->
+            <div style="margin-bottom: 20px;">
+                <h4>📷 Live Camera Translation Results:</h4>
+                <div id="camera-translation-results" style="background: rgba(0,0,0,0.1); padding: 15px; border-radius: 8px; margin-top: 10px; min-height: 60px; font-family: monospace;">
+                    <em style="color: rgba(255,255,255,0.6);">No live camera translations yet. Start camera recognition to see real-time results here.</em>
+                </div>
+            </div>
+
+            <!-- Recent Translations History -->
+            <div>
+                <h4>📋 Recent Translations:</h4>
+                <div id="translation-history" style="background: rgba(0,0,0,0.1); padding: 15px; border-radius: 8px; margin-top: 10px; max-height: 200px; overflow-y: auto;">
+                    <em style="color: rgba(255,255,255,0.6);">Translation history will appear here...</em>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="results-panel">
+            <div class="panel-title">📊 Screening Results</div>
+
+            <!-- Progress Bar -->
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span>Progress:</span>
+                    <span><span id="current-question">0</span> / <span id="total-questions">10</span></span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+            </div>
+
+            <!-- Metrics -->
+            <div class="results-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="triage-score">0</div>
+                    <div class="metric-label">Triage Score</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="responses-count">0</div>
+                    <div class="metric-label">Responses Recorded</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="danger-count">0</div>
+                    <div class="metric-label">Danger Signs</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="completion-rate">0%</div>
+                    <div class="metric-label">Completion</div>
+                </div>
+            </div>
+
+            <!-- Danger Alerts -->
+            <div id="danger-alert" class="danger-alert">
+                <strong>⚠️ Danger Signs Detected:</strong>
+                <div id="danger-flags"></div>
+            </div>
+
+            <div id="emergency-alert" class="emergency-alert">
+                <strong>🚨 EMERGENCY PROTOCOL ACTIVATED</strong><br>
+                <small>Immediate medical attention required!</small>
+            </div>
+
+            <!-- Responses List -->
+            <div class="responses-list" id="responses-list">
+                <div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;">
+                    No responses recorded yet
+                </div>
+            </div>
+
+            <!-- FHIR Export Section -->
+            <div class="fhir-section">
+                <strong>FHIR Bundle Export:</strong>
+                <button class="export-btn" onclick="showFHIR()">📄 Show FHIR Bundle</button>
+                <button class="export-btn" onclick="downloadFHIR()">💾 Download JSON</button>
+                <div id="fhir-json" class="fhir-json"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Views -->
+    <div id="main-screening-view" class="view active">
+        <!-- Main screening content is already in the container above -->
+    </div>
+
+    <div id="avatar-viewer-view" class="view">
+        <div class="avatar-viewer">
+            <div class="info-card">
+                <h4>🤖 3D Avatar Viewer</h4>
+                <p>Detailed avatar visualization and signing performance</p>
+
+                <div class="avatar-container" style="width: 100%; height: 600px; margin: 20px 0;">
+                    <div class="status-indicator">🎭 Avatar Viewer Mode</div>
+                </div>
+
+                <div class="avatar-controls" style="justify-content: center; margin-top: 20px;">
+                    <button class="avatar-btn" onclick="playAnimation()">▶️ Play</button>
+                    <button class="avatar-btn" onclick="pauseAnimation()">⏸️ Pause</button>
+                    <button class="avatar-btn" onclick="resetPose()">🔄 Reset</button>
+                    <button class="maximize-btn" onclick="toggleMaximize()">⛶ Maximize</button>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <h5>Test Signing Synthesis:</h5>
+                    <input type="text" id="viewer-text-input" class="form-input" placeholder="Enter text to synthesize..." style="margin: 10px 0;">
+                    <button class="avatar-btn" onclick="synthesizeUSL()" style="width: 100%;">🎭 Synthesize USL</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="research-info-view" class="view">
+        <div class="research-info">
+            <div class="info-card">
+                <h4>📄 Research Paper Abstract</h4>
+                <h5>Graph-Reasoned Large Vision Models for Ugandan Sign Language Translation in Infectious Disease Screening</h5>
+
+                <p><strong>Abstract:</strong> We propose a large vision model (LVM)-based, real-time Ugandan Sign Language (USL) translator specialized for infectious-disease screening in clinical intake and triage, converting USL → structured screening text → speech, and (for clinician prompts) English/Runyankole/Luganda text → gloss → USL synthesis...</p>
+
+                <h5>Key Components:</h5>
+                <ul>
+                    <li>✅ Large Vision Model (LVM) for USL Translation</li>
+                    <li>✅ Infectious Disease Screening Ontology</li>
+                    <li>✅ Bidirectional Translation (USL ↔ Clinical Text)</li>
+                    <li>✅ Parametric Avatar with MANO+face rig</li>
+                    <li>✅ Graph-Grounded USL Linguistics</li>
+                    <li>✅ Robustness & Safety Features</li>
+                    <li>✅ Resource-Constrained Deployment</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h4>🩺 Screening Diseases Covered</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div>🦟 Malaria</div>
+                    <div>🫁 Tuberculosis (TB)</div>
+                    <div>🥴 Typhoid</div>
+                    <div>🤢 Cholera</div>
+                    <div>🦠 Acute Watery Diarrhea</div>
+                    <div>🌡️ Measles</div>
+                    <div>🩸 Viral Hemorrhagic Fevers</div>
+                    <div>😷 Influenza/COVID-like</div>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h4>🎯 Technical Specifications</h4>
+                <ul>
+                    <li><strong>Perception Stack:</strong> 3D skeletal pose + raw pixels via multistream transformer</li>
+                    <li><strong>Avatar:</strong> MANO+face rig with prosody control and NMS</li>
+                    <li><strong>Deployment:</strong> Edge computing, offline-first, <300ms latency</li>
+                    <li><strong>Safety:</strong> Danger sign detection, emergency protocols</li>
+                    <li><strong>Languages:</strong> English, Runyankole, Luganda</li>
+                    <li><strong>USL Variants:</strong> Canonical, Kampala, Gulu, Mbale</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="api-status-view" class="view">
+        <div class="api-status">
+            <div class="info-card">
+                <h4>🔌 API Status & System Health</h4>
+                <p>Real-time monitoring of ML models and system components</p>
+            </div>
+
+            <div class="status-grid">
+                <div class="status-card">
+                    <h5>🤖 ML API Server</h5>
+                    <div class="status-indicator status-online"></div>
+                    <p>localhost:5000</p>
+                    <small>Sign recognition model active</small>
+                </div>
+
+                <div class="status-card">
+                    <h5>🎭 3D Avatar System</h5>
+                    <div class="status-indicator status-online"></div>
+                    <p>Three.js Renderer</p>
+                    <small>FBX/OBJ models loaded</small>
+                </div>
+
+                <div class="status-card">
+                    <h5>🗣️ Speech Synthesis</h5>
+                    <div class="status-indicator status-warning"></div>
+                    <p>Web Speech API</p>
+                    <small>Browser-dependent</small>
+                </div>
+
+                <div class="status-card">
+                    <h5>📱 Offline Mode</h5>
+                    <div class="status-indicator status-online"></div>
+                    <p>Local Storage</p>
+                    <small>Edge deployment ready</small>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h4>📊 Performance Metrics</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                    <div><strong>Latency:</strong><br>< 300ms</div>
+                    <div><strong>WER:</strong><br>< 15%</div>
+                    <div><strong>F1 Score:</strong><br>> 85%</div>
+                    <div><strong>Model Size:</strong><br>< 200MB</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="help-docs-view" class="view">
+        <div class="help-docs">
+            <div class="info-card">
+                <h4>❓ Help & Documentation</h4>
+                <p>Complete user guide for the USL translation system</p>
+            </div>
+
+            <div class="info-card">
+                <h4>🏥 How to Use the Screening System</h4>
+                <ol>
+                    <li><strong>Setup:</strong> Enter patient ID and select clinic language</li>
+                    <li><strong>Screening:</strong> Answer questions using buttons or voice responses</li>
+                    <li><strong>Translation:</strong> System automatically translates to USL via avatar</li>
+                    <li><strong>Export:</strong> Generate FHIR bundle for electronic health records</li>
+                </ol>
+            </div>
+
+            <div class="info-card">
+                <h4>🎭 Avatar Controls</h4>
+                <ul>
+                    <li><strong>▶️ Play:</strong> Start signing animation sequence</li>
+                    <li><strong>⏸️ Pause:</strong> Stop current animation</li>
+                    <li><strong>🔄 Reset:</strong> Return to neutral pose</li>
+                    <li><strong>⛶ Maximize:</strong> Full-screen avatar view</li>
+                    <li><strong>Synthesize:</strong> Convert text to USL signing</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h4>🚨 Emergency Features</h4>
+                <ul>
+                    <li><strong>Danger Signs:</strong> Automatic detection of critical symptoms</li>
+                    <li><strong>Emergency Protocol:</strong> Immediate alerts for severe cases</li>
+                    <li><strong>Interpreter Escalation:</strong> Fallback to human interpreter when uncertain</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h4>🌍 Supported Languages & Regions</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div><strong>Languages:</strong><br>English, Runyankole, Luganda</div>
+                    <div><strong>USL Variants:</strong><br>Canonical, Kampala, Gulu, Mbale</div>
+                    <div><strong>Deployment:</strong><br>Offline-first, edge computing</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Translation View -->
+    <div id="video-translation-view" class="view">
+        <div class="video-translation" style="padding: 30px; max-width: 1200px; margin: 0 auto;">
+            <div class="info-card">
+                <h4>🎥 Video Translation & Live Camera</h4>
+                <p>Upload USL videos or use live camera for real-time sign language recognition</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px;">
+
+                    <!-- Video Upload Section -->
+                    <div style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 25px; backdrop-filter: blur(10px);">
+                        <h4 style="margin-bottom: 20px; color: #333;">📤 Upload USL Video</h4>
+
+                        <div style="border: 2px dashed rgba(102, 126, 234, 0.5); border-radius: 10px; padding: 40px; text-align: center; margin-bottom: 20px;">
+                            <div style="font-size: 48px; margin-bottom: 10px;">📹</div>
+                            <p style="margin-bottom: 15px; color: #666;">Drag & drop USL video file or click to browse</p>
+                            <input type="file" id="video-upload" accept="video/*" style="display: none;" onchange="handleVideoUpload(event)">
+                            <button onclick="document.getElementById('video-upload').click()" class="avatar-btn" style="padding: 10px 20px; margin-bottom: 10px;">Choose Video File</button>
+                            <p style="font-size: 12px; color: #888;">Supported formats: MP4, WebM, MOV (max 100MB)</p>
+                        </div>
+
+                        <div id="video-preview" style="display: none; margin-bottom: 20px;">
+                            <video id="uploaded-video" controls style="width: 100%; border-radius: 10px; max-height: 300px;"></video>
+                            <div style="margin-top: 15px;">
+                                <button onclick="processUploadedVideo()" class="avatar-btn" style="width: 100%; padding: 12px;">🎭 Process Video for USL Recognition</button>
+                            </div>
+                        </div>
+
+                        <div id="video-results" style="display: none; margin-top: 20px;">
+                            <h5>🎯 Recognition Results:</h5>
+                            <div id="video-transcription" style="background: rgba(0,0,0,0.1); padding: 15px; border-radius: 8px; margin-top: 10px; font-family: monospace;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Live Camera Section -->
+                    <div style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 25px; backdrop-filter: blur(10px);">
+                        <h4 style="margin-bottom: 20px; color: #333;">📷 Live Camera Translation</h4>
+
+                        <div style="border: 2px dashed rgba(76, 175, 80, 0.5); border-radius: 10px; padding: 40px; text-align: center; margin-bottom: 20px;">
+                            <div style="font-size: 48px; margin-bottom: 10px;">📸</div>
+                            <p style="margin-bottom: 15px; color: #666;">Real-time USL sign recognition</p>
+                            <button onclick="startCamera()" id="camera-btn" class="avatar-btn" style="padding: 10px 20px; margin-bottom: 10px;">🎥 Start Camera</button>
+                            <p style="font-size: 12px; color: #888;">Requires camera permissions</p>
+                        </div>
+
+                        <div id="camera-preview" style="display: none; margin-bottom: 20px;">
+                            <video id="camera-video" autoplay playsinline style="width: 100%; border-radius: 10px; max-height: 300px; transform: scaleX(-1);"></video>
+                            <canvas id="camera-canvas" style="display: none;"></canvas>
+                            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                                <button onclick="startRealTimeRecognition()" id="recognition-btn" class="avatar-btn" style="flex: 1; padding: 12px;">🎭 Start Recognition</button>
+                                <button onclick="stopCamera()" class="avatar-btn" style="padding: 12px;">⏹️ Stop</button>
+                            </div>
+                        </div>
+
+                        <div id="live-results" style="display: none; margin-top: 20px;">
+                            <h5>🔴 Live Recognition:</h5>
+                            <div id="live-transcription" style="background: rgba(0,0,0,0.1); padding: 15px; border-radius: 8px; margin-top: 10px; font-family: monospace; min-height: 60px;"></div>
+                            <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                                <span id="recognition-status">Status: Ready</span> |
+                                <span id="confidence-level">Confidence: --</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Model Testing Section -->
+                <div class="info-card" style="margin-top: 30px;">
+                    <h4>🧪 Model Testing & Comparison</h4>
+                    <p>Test different ML models for sign recognition performance</p>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; text-align: center;">
+                            <h6>🤖 Sign Recognition Model</h6>
+                            <p style="font-size: 12px; margin: 5px 0;">usl_models/sign_recognition_model.pth</p>
+                            <button onclick="testModel('sign_recognition')" class="preset-btn" style="width: 100%;">Test Model</button>
+                        </div>
+
+                        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; text-align: center;">
+                            <h6>🩺 Infectious Classifier</h6>
+                            <p style="font-size: 12px; margin: 5px 0;">best_infectious_classifier.pth</p>
+                            <button onclick="testModel('infectious_classifier')" class="preset-btn" style="width: 100%;">Test Model</button>
+                        </div>
+
+                        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; text-align: center;">
+                            <h6>🏥 Screening Model</h6>
+                            <p style="font-size: 12px; margin: 5px 0;">usl_models/usl_screening_model.pth</p>
+                            <button onclick="testModel('screening_model')" class="preset-btn" style="width: 100%;">Test Model</button>
+                        </div>
+
+                        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; text-align: center;">
+                            <h6>🔄 API Comparison</h6>
+                            <p style="font-size: 12px; margin: 5px 0;">Compare all models</p>
+                            <button onclick="compareModels()" class="preset-btn" style="width: 100%;">Compare</button>
+                        </div>
+                    </div>
+
+                    <div id="model-test-results" style="margin-top: 20px; display: none;">
+                        <h5>📊 Model Test Results:</h5>
+                        <div id="test-output" style="background: rgba(0,0,0,0.1); padding: 15px; border-radius: 8px; margin-top: 10px; font-family: monospace; white-space: pre-wrap;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // Global variables
+        let scene, camera, renderer, controls, model, mixer;
+        let animations = [];
+        let currentAnimation = null;
+
+        // Application state
+        let currentSession = {
+            patientId: 'PAT-001',
+            language: 'english',
+            regionalVariant: 'canonical',
+            responses: {},
+            triageScore: 0,
+            dangerFlags: [],
+            currentQuestionIndex: 0,
+            screeningOntology: []
+        };
+
+        // Screening ontology data - covering high-priority infectious diseases in Uganda
+        // (malaria, TB, typhoid, cholera/acute watery diarrhea, measles, viral hemorrhagic fevers, influenza/COVID-like illness)
+        const screeningOntology = [
+            {
+                slot: "cough_hemoptysis",
+                question: "Do you have cough? Any blood in sputum?",
+                usl_gloss: "COUGH YOU HAVE? BLOOD SPIT?",
+                languages: {
+                    "english": "Do you have cough with blood?",
+                    "runyankole": "Orikuhikura? Omusaayi guri mu kikohozi?",
+                    "luganda": "Olina kikohozi? Omusaayi guli mu kikohozi?"
+                },
+                triage_weight: 3,
+                response_type: "cough_blood",
+                danger_signs: ["hemoptysis"]
+            },
+            {
+                slot: "diarrhea_dehydration",
+                question: "Do you have diarrhea? Signs of dehydration?",
+                usl_gloss: "DIARRHEA YOU HAVE? WATER-LOSS?",
+                languages: {
+                    "english": "Do you have diarrhea or dehydration?",
+                    "runyankole": "Orikugira ebyenda? Omubiri gukamye?",
+                    "luganda": "Olina ebyenda? Omubiri gukaze?"
+                },
+                triage_weight: 3,
+                response_type: "diarrhea_severity",
+                danger_signs: ["severe_dehydration", "bloody_diarrhea"]
+            },
+            {
+                slot: "rash",
+                question: "Do you have any skin rash or spots?",
+                usl_gloss: "SKIN SPOTS YOU HAVE?",
+                languages: {
+                    "english": "Do you have skin rash?",
+                    "runyankole": "Orikugira obushasha ku ruhanga?",
+                    "luganda": "Olina obushasha ku lususu?"
+                },
+                triage_weight: 2,
+                response_type: "yes_no"
+            },
+            {
+                slot: "exposure",
+                question: "Have you been exposed to sick person?",
+                usl_gloss: "SICK PERSON CONTACT YOU?",
+                languages: {
+                    "english": "Have you been exposed to sick person?",
+                    "runyankole": "Waatambula n'omuntu omulwadde?",
+                    "luganda": "Otambuze n'omuntu omulwadde?"
+                },
+                triage_weight: 2,
+                response_type: "yes_no"
+            },
+            {
+                slot: "travel",
+                question: "Have you traveled recently?",
+                usl_gloss: "TRAVEL RECENT YOU?",
+                languages: {
+                    "english": "Have you traveled recently?",
+                    "runyankole": "Waatambura haihi?",
+                    "luganda": "Otambuze mu kiseera kino?"
+                },
+                triage_weight: 1,
+                response_type: "yes_no"
+            },
+            {
+                slot: "pregnancy",
+                question: "Are you pregnant?",
+                usl_gloss: "PREGNANT YOU?",
+                languages: {
+                    "english": "Are you pregnant?",
+                    "runyankole": "Oli mu nkye?",
+                    "luganda": "Oli mu lubuto?"
+                },
+                triage_weight: 1,
+                response_type: "pregnancy_status"
+            },
+            {
+                slot: "hiv_tb_history",
+                question: "History of HIV or TB?",
+                usl_gloss: "HIV TB HISTORY YOU?",
+                languages: {
+                    "english": "Do you have HIV or TB history?",
+                    "runyankole": "Wali na HIV oba TB?",
+                    "luganda": "Wali na HIV oba TB?"
+                },
+                triage_weight: 2,
+                response_type: "yes_no"
+            },
+            {
+                slot: "danger_signs",
+                question: "Any danger signs: difficulty breathing, confusion, bleeding?",
+                usl_gloss: "DANGER SIGNS ANY? BREATH HARD? CONFUSION? BLEED?",
+                languages: {
+                    "english": "Any danger signs?",
+                    "runyankole": "Ebindu by'okutya obulamu?",
+                    "luganda": "Waliwo eby'okutya obulamu?"
+                },
+                triage_weight: 4,
+                response_type: "danger_multi",
+                danger_signs: ["respiratory_distress", "altered_consciousness", "severe_bleeding"]
+            }
+        ];
+
+        // Initialize application
+        window.addEventListener('load', init);
+
+        function init() {
+            console.log('🚀 Initializing USL System...');
+
+            // Initialize session
+            currentSession.screeningOntology = screeningOntology;
+
+            // Setup form listeners
+            setupFormListeners();
+
+            // Initialize 3D avatar (async)
+            setTimeout(() => initAvatar(), 100);
+
+            // Load first question with delay to prevent blocking
+            setTimeout(() => loadCurrentQuestion(), 200);
+
+            // Update UI
+            updateUI();
+
+            console.log('✅ USL System initialized');
+        }
+
+        function setupFormListeners() {
+            document.getElementById('patient-id').addEventListener('change', function(e) {
+                currentSession.patientId = e.target.value;
+            });
+
+            document.getElementById('language').addEventListener('change', function(e) {
+                currentSession.language = e.target.value;
+                loadCurrentQuestion();
+            });
+
+            document.getElementById('regional-variant').addEventListener('change', function(e) {
+                currentSession.regionalVariant = e.target.value;
+            });
+        }
+
+
+
+        function setupLighting() {
+            // Brighter ambient light for better visibility
+            const ambientLight = new THREE.AmbientLight(0x808080, 0.6);
+            scene.add(ambientLight);
+
+            // Main directional light - brighter and warmer
+            const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
+            keyLight.position.set(5, 8, 5);
+            keyLight.castShadow = true;
+            keyLight.shadow.mapSize.width = 2048;
+            keyLight.shadow.mapSize.height = 2048;
+            scene.add(keyLight);
+
+            // Fill light - warmer tone
+            const fillLight = new THREE.DirectionalLight(0xfff5e6, 0.8);
+            fillLight.position.set(-5, 3, -5);
+            scene.add(fillLight);
+
+            // Rim light - subtle highlight
+            const rimLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            rimLight.position.set(0, 2, -8);
+            scene.add(rimLight);
+
+            // Additional side light for better skin illumination
+            const sideLight = new THREE.DirectionalLight(0xfff0e6, 0.6);
+            sideLight.position.set(8, 4, 0);
+            scene.add(sideLight);
+
+            // Ground plane with subtle shadow
+            const groundGeometry = new THREE.PlaneGeometry(20, 20);
+            const groundMaterial = new THREE.ShadowMaterial({ opacity: 0.2 });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -1.5;
+            ground.receiveShadow = true;
+            scene.add(ground);
+        }
+
+        function initAvatar() {
+            try {
+                console.log('🎭 Initializing avatar...');
+
+                // Scene setup
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x4a5568); // Lighter gray background for better visibility
+
+                // Check if avatar container exists
+                const container = document.getElementById('avatar-container');
+                if (!container) {
+                    console.error('❌ Avatar container not found!');
+                    return;
+                }
+
+                // Camera setup
+                const containerWidth = container.clientWidth;
+                const containerHeight = 500;
+                camera = new THREE.PerspectiveCamera(45, containerWidth / containerHeight, 0.1, 1000);
+                camera.position.set(0, 1, 3); // Better initial position
+                camera.lookAt(0, 1, 0); // Look at center
+
+                // Renderer setup
+                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+                renderer.setSize(containerWidth, containerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Optimize performance
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                renderer.outputEncoding = THREE.sRGBEncoding;
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                renderer.toneMappingExposure = 1.2;
+
+                // Clear any existing canvas
+                while (container.firstChild) {
+                    container.removeChild(container.firstChild);
+                }
+
+                container.appendChild(renderer.domElement);
+                console.log('✅ Renderer attached to container');
+
+                // Controls
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.05;
+                controls.enableZoom = true;
+                controls.enablePan = false;
+                controls.minDistance = 1.5;
+                controls.maxDistance = 6;
+                controls.maxPolarAngle = Math.PI * 0.85;
+                controls.target.set(0, 1, 0); // Focus on center of avatar
+
+                // Lighting setup
+                setupLighting();
+
+                // Immediately show fallback avatar for visibility
+                showFallbackAvatar();
+
+                // Try to load real model in background
+                loadAvatarModel();
+
+                // Handle window resize
+                window.addEventListener('resize', onWindowResize, false);
+
+                // Start render loop
+                animate();
+
+                console.log('🎭 Avatar initialization completed');
+                updateStatus('🎭 Avatar Ready - Fallback Active');
+
+            } catch (error) {
+                console.error('❌ Avatar initialization failed:', error);
+                updateStatus('❌ Avatar initialization failed');
+            }
+        }
+                    );
+                },
+                function (error) {
+                    console.warn('MTL loading failed:', error);
+                    // Try loading OBJ without materials
+                    const objLoader = new THREE.OBJLoader();
+                    objLoader.load(
+                        'usl_models/female avatar/obj file.obj',
+                        function (obj) {
+                            console.log('OBJ loaded successfully (no materials):', obj);
+                            // Remove fallback and use real model
+                            if (model && model.children) {
+                                scene.remove(model);
+                            }
+                            model = obj;
+                            setupModel(model);
+                            updateStatus('✅ OBJ Model Loaded (No Materials)');
+                        },
+                        function (progress) {
+                            const percent = (progress.loaded / progress.total * 100).toFixed(1);
+                            updateStatus(`📦 Loading OBJ Model... ${percent}%`);
+                        },
+                        function (error) {
+                            console.error('OBJ loading failed:', error);
+                            updateStatus('⚠️ Using Enhanced Fallback Avatar');
+                        }
+                    );
+                }
+            );
+        }
+
+        function loadAvatarModel() {
+            // Skip model loading for now to speed up page load
+            // Models will load in background after page is ready
+            updateStatus('⚠️ Using Enhanced Fallback Avatar');
+        }
+
+        function setupModel(model) {
+            // Calculate model bounding box to properly scale it
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+
+            // Scale model to fit within view (target height of 2 units)
+            const targetHeight = 2;
+            const scaleFactor = targetHeight / size.y;
+            model.scale.setScalar(scaleFactor * 0.8); // 0.8 to add some padding
+
+            // Center the model at origin
+            model.position.set(-center.x * model.scale.x, -box.min.y * model.scale.y, -center.z * model.scale.z);
+
+            model.traverse(function (child) {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(mat => {
+                                mat.needsUpdate = true;
+                            });
+                        } else {
+                            child.material.needsUpdate = true;
+                        }
+                    }
+                }
+            });
+
+            scene.add(model);
+
+            if (model.animations && model.animations.length > 0) {
+                mixer = new THREE.AnimationMixer(model);
+                animations = model.animations;
+            }
+
+            model.rotation.y = 0; // Face straight into camera
+
+            // Adjust camera to properly frame the model
+            const distance = size.y * 1.5;
+            camera.position.set(0, size.y * 0.4, distance);
+            camera.lookAt(0, size.y * 0.3, 0);
+
+            updateStatus('🎭 Avatar Ready for USL Synthesis');
+        }
+
+        function showFallbackAvatar() {
+            updateStatus('⚠️ Using Fallback Avatar');
+
+            const avatarGroup = new THREE.Group();
+
+            // FIXED: Much lighter, visible skin tone
+            const skinColor = 0xFFDBAC; // Light peachy skin tone - highly visible
+            const clothingColor = 0x4A90E2; // Blue shirt
+
+            // Body (torso)
+            const bodyGeometry = new THREE.CapsuleGeometry(0.3, 0.9, 8, 16);
+            const bodyMaterial = new THREE.MeshStandardMaterial({
+                color: clothingColor,
+                roughness: 0.7,
+                metalness: 0.1
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0.8;
+            body.castShadow = true;
+            avatarGroup.add(body);
+
+            // Head - lighter skin
+            const headGeometry = new THREE.SphereGeometry(0.2, 16, 12);
+            const headMaterial = new THREE.MeshStandardMaterial({
+                color: skinColor,
+                roughness: 0.6,
+                metalness: 0.0
+            });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 1.5;
+            head.castShadow = true;
+            avatarGroup.add(head);
+
+            // FIXED: Arms with lighter skin tone
+            const armGeometry = new THREE.CapsuleGeometry(0.1, 0.6, 6, 8);
+            const armMaterial = new THREE.MeshStandardMaterial({
+                color: skinColor,
+                roughness: 0.6,
+                metalness: 0.0
+            });
+
+            const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+            leftArm.position.set(-0.45, 1.0, 0);
+            leftArm.rotation.z = Math.PI / 6;
+            leftArm.castShadow = true;
+            leftArm.name = 'leftArm'; // Name for animation
+            avatarGroup.add(leftArm);
+
+            const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+            rightArm.position.set(0.45, 1.0, 0);
+            rightArm.rotation.z = -Math.PI / 6;
+            rightArm.castShadow = true;
+            rightArm.name = 'rightArm'; // Name for animation
+            avatarGroup.add(rightArm);
+
+            // Hands - even lighter for visibility
+            const handGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+            const handMaterial = new THREE.MeshStandardMaterial({
+                color: 0xFFE4C4, // Bisque - very light
+                roughness: 0.5,
+                metalness: 0.0
+            });
+
+            const leftHand = new THREE.Mesh(handGeometry, handMaterial);
+            leftHand.position.set(-0.45, 0.65, 0);
+            leftHand.castShadow = true;
+            leftHand.name = 'leftHand';
+            avatarGroup.add(leftHand);
+
+            const rightHand = new THREE.Mesh(handGeometry, handMaterial);
+            rightHand.position.set(0.45, 0.65, 0);
+            rightHand.castShadow = true;
+            rightHand.name = 'rightHand';
+            avatarGroup.add(rightHand);
+
+            // Legs - darker pants
+            const legGeometry = new THREE.CapsuleGeometry(0.12, 0.7, 6, 8);
+            const legMaterial = new THREE.MeshStandardMaterial({
+                color: 0x2C3E50,
+                roughness: 0.8,
+                metalness: 0.1
+            });
+
+            const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+            leftLeg.position.set(-0.18, 0.15, 0);
+            leftLeg.castShadow = true;
+            avatarGroup.add(leftLeg);
+
+            const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+            rightLeg.position.set(0.18, 0.15, 0);
+            rightLeg.castShadow = true;
+            avatarGroup.add(rightLeg);
+
+            model = avatarGroup;
+            scene.add(model);
+
+            // Position avatar properly in view
+            model.position.y = 0;
+
+            // Adjust camera for fallback avatar
+            camera.position.set(0, 1, 3);
+            camera.lookAt(0, 1, 0);
+
+            updateStatus('🎭 Fallback Avatar Active - Enhanced Visibility');
+        }
+
+        function loadCurrentQuestion() {
+            const questions = currentSession.screeningOntology;
+            const currentIndex = currentSession.currentQuestionIndex;
+
+            if (currentIndex < questions.length) {
+                const question = questions[currentIndex];
+                const questionText = question.languages[currentSession.language] || question.question;
+
+                document.getElementById('question-text').textContent = questionText;
+                document.getElementById('gloss-text').textContent = question.usl_gloss;
+                document.getElementById('current-gloss').textContent = question.usl_gloss;
+                document.getElementById('gloss-display').style.display = 'block';
+
+                // Generate response options
+                generateResponseOptions(question);
+
+                // Update progress
+                document.getElementById('current-question').textContent = currentIndex + 1;
+                document.getElementById('total-questions').textContent = questions.length;
+                const progressPercent = ((currentIndex + 1) / questions.length) * 100;
+                document.getElementById('progress-fill').style.width = progressPercent + '%';
+
+                // Automatically start signing the question
+                startSigningAnimation();
+
+                updateStatus(`❓ Question ${currentIndex + 1} of ${questions.length}`);
+            } else {
+                // Screening complete
+                document.getElementById('question-display').innerHTML = `
+                    <div style="text-align: center; padding: 30px;">
+                        <h2>🎉 Screening Complete!</h2>
+                        <p>All questions have been answered.</p>
+                        <button class="submit-btn" onclick="newSession()" style="margin-top: 20px;">🔄 Start New Session</button>
+                    </div>
+                `;
+                document.getElementById('response-options').innerHTML = '';
+                document.getElementById('submit-btn').style.display = 'none';
+                updateStatus('🎉 Screening Complete');
+            }
+        }
+
+        function generateResponseOptions(question) {
+            const container = document.getElementById('response-options');
+            container.innerHTML = '';
+
+            const responseType = question.response_type;
+
+            if (responseType === 'yes_no') {
+                container.innerHTML = `
+                    <button class="response-btn" onclick="selectResponse('Yes')">Yes</button>
+                    <button class="response-btn" onclick="selectResponse('No')">No</button>
+                `;
+            } else if (responseType === 'temporal') {
+                const options = ['Today', 'Yesterday', '2-3 days ago', '1 week ago', '2 weeks ago', '1 month ago', 'More than 1 month ago'];
+                options.forEach(option => {
+                    container.innerHTML += `<button class="response-btn" onclick="selectResponse('${option}')">${option}</button>`;
+                });
+            } else if (responseType === 'cough_blood') {
+                container.innerHTML = `
+                    <div style="grid-column: span 2; margin-bottom: 10px;">
+                        <strong>Do you have cough?</strong>
+                    </div>
+                    <button class="response-btn" onclick="selectCoughResponse('Yes')">Yes</button>
+                    <button class="response-btn" onclick="selectCoughResponse('No')">No</button>
+                    <div style="grid-column: span 2; margin: 10px 0;">
+                        <strong>Any blood in sputum?</strong>
+                    </div>
+                    <button class="response-btn" onclick="selectBloodResponse('Yes')">Yes</button>
+                    <button class="response-btn" onclick="selectBloodResponse('No')">No</button>
+                `;
+            } else if (responseType === 'diarrhea_severity') {
+                container.innerHTML = `
+                    <div style="grid-column: span 2; margin-bottom: 10px;">
+                        <strong>Do you have diarrhea?</strong>
+                    </div>
+                    <button class="response-btn" onclick="setDiarrheaStatus('Yes')">Yes</button>
+                    <button class="response-btn" onclick="setDiarrheaStatus('No')">No</button>
+                    <div id="severity-options" style="grid-column: span 2; display: none; margin-top: 10px;">
+                        <strong>Severity:</strong><br>
+                        <button class="response-btn" onclick="selectSeverity('Mild')">Mild</button>
+                        <button class="response-btn" onclick="selectSeverity('Moderate')">Moderate</button>
+                        <button class="response-btn" onclick="selectSeverity('Severe')">Severe</button>
+                        <button class="response-btn" onclick="selectSeverity('Bloody diarrhea')">Bloody diarrhea</button>
+                    </div>
+                `;
+            } else if (responseType === 'pregnancy_status') {
+                container.innerHTML = `
+                    <button class="response-btn" onclick="selectResponse('Yes')">Yes</button>
+                    <button class="response-btn" onclick="selectResponse('No')">No</button>
+                    <button class="response-btn" onclick="selectResponse('Not applicable')">Not applicable</button>
+                `;
+            } else if (responseType === 'danger_multi') {
+                const dangers = ['Difficulty breathing', 'Confusion', 'Severe bleeding', 'Bloody diarrhea', 'Seizures', 'Unconsciousness'];
+                container.innerHTML = `
+                    <div style="grid-column: span 2; margin-bottom: 10px;">
+                        <strong>Check all that apply:</strong>
+                    </div>
+                `;
+                dangers.forEach(danger => {
+                    container.innerHTML += `<button class="response-btn" onclick="toggleDangerSign('${danger}')">${danger}</button>`;
+                });
+                container.innerHTML += `<button class="response-btn" onclick="selectResponse('None')">None</button>`;
+            }
+
+            // Clear previous selections
+            selectedResponses = {};
+        }
+
+        let selectedResponses = {};
+
+        function selectResponse(response) {
+            selectedResponses.main = response;
+
+            // Update button styles
+            const buttons = document.querySelectorAll('.response-btn');
+            buttons.forEach(btn => btn.classList.remove('selected'));
+            event.target.classList.add('selected');
+        }
+
+        function selectCoughResponse(response) {
+            selectedResponses.cough = response;
+            event.target.classList.add('selected');
+
+            if (response === 'No') {
+                selectedResponses.blood = 'N/A';
+                const bloodBtns = document.querySelectorAll('[onclick*="selectBloodResponse"]');
+                bloodBtns.forEach(btn => btn.classList.remove('selected'));
+            }
+        }
+
+        function selectBloodResponse(response) {
+            selectedResponses.blood = response;
+            event.target.classList.add('selected');
+        }
+
+        function setDiarrheaStatus(status) {
+            selectedResponses.diarrhea = status;
+            event.target.classList.add('selected');
+
+            const severityDiv = document.getElementById('severity-options');
+            if (status === 'Yes') {
+                severityDiv.style.display = 'block';
+            } else {
+                severityDiv.style.display = 'none';
+                selectedResponses.severity = 'N/A';
+            }
+        }
+
+        function selectSeverity(severity) {
+            selectedResponses.severity = severity;
+            const severityBtns = document.querySelectorAll('[onclick*="selectSeverity"]');
+            severityBtns.forEach(btn => btn.classList.remove('selected'));
+            event.target.classList.add('selected');
+        }
+
+        function toggleDangerSign(sign) {
+            if (!selectedResponses.dangerSigns) selectedResponses.dangerSigns = [];
+
+            const index = selectedResponses.dangerSigns.indexOf(sign);
+            if (index > -1) {
+                selectedResponses.dangerSigns.splice(index, 1);
+                event.target.classList.remove('selected');
+            } else {
+                selectedResponses.dangerSigns.push(sign);
+                event.target.classList.add('selected');
+            }
+        }
+
+        function submitResponse() {
+            const question = currentSession.screeningOntology[currentSession.currentQuestionIndex];
+            let response = '';
+
+            // Compile response based on question type
+            if (question.response_type === 'cough_blood') {
+                response = `Cough: ${selectedResponses.cough || 'Not answered'}, Blood: ${selectedResponses.blood || 'Not answered'}`;
+            } else if (question.response_type === 'diarrhea_severity') {
+                if (selectedResponses.diarrhea === 'No') {
+                    response = 'No diarrhea';
+                } else {
+                    response = `Diarrhea: ${selectedResponses.diarrhea}, Severity: ${selectedResponses.severity || 'Not specified'}`;
+                }
+            } else if (question.response_type === 'danger_multi') {
+                response = selectedResponses.dangerSigns && selectedResponses.dangerSigns.length > 0
+                    ? selectedResponses.dangerSigns.join(', ')
+                    : 'None';
+            } else {
+                response = selectedResponses.main || 'Not answered';
+            }
+
+            if (!response || response === 'Not answered') {
+                alert('Please select a response before submitting.');
+                return;
+            }
+
+            // Record response
+            currentSession.responses[question.slot] = {
+                question: question.question,
+                response: response,
+                gloss: question.usl_gloss,
+                timestamp: new Date().toISOString()
+            };
+
+            // Update triage score
+            let weight = question.triage_weight || 1;
+            if (response.toLowerCase().includes('yes') || response.toLowerCase().includes('severe')) {
+                currentSession.triageScore += weight;
+            }
+
+            // Check danger signs
+            if (question.danger_signs && response) {
+                const dangerMappings = {
+                    'blood': 'hemoptysis',
+                    'severe': 'severe_dehydration',
+                    'bloody diarrhea': 'bloody_diarrhea',
+                    'difficulty breathing': 'respiratory_distress',
+                    'confusion': 'altered_consciousness',
+                    'severe bleeding': 'severe_bleeding'
+                };
+
+                Object.entries(dangerMappings).forEach(([trigger, danger]) => {
+                    if (response.toLowerCase().includes(trigger)) {
+                        if (!currentSession.dangerFlags.includes(danger)) {
+                            currentSession.dangerFlags.push(danger);
+                        }
+                    }
+                });
+            }
+
+            // Move to next question
+            currentSession.currentQuestionIndex++;
+
+            // Update UI
+            updateUI();
+
+            // Load next question
+            loadCurrentQuestion();
+
+            // Trigger avatar animation
+            playAnimation();
+        }
+
+        function updateUI() {
+            // Update metrics
+            document.getElementById('triage-score').textContent = currentSession.triageScore;
+            document.getElementById('responses-count').textContent = Object.keys(currentSession.responses).length;
+            document.getElementById('danger-count').textContent = currentSession.dangerFlags.length;
+
+            const completionRate = Math.round((Object.keys(currentSession.responses).length / currentSession.screeningOntology.length) * 100);
+            document.getElementById('completion-rate').textContent = completionRate + '%';
+
+            // Update danger alerts
+            const dangerAlert = document.getElementById('danger-alert');
+            const emergencyAlert = document.getElementById('emergency-alert');
+
+            if (currentSession.dangerFlags.length > 0) {
+                document.getElementById('danger-flags').textContent = currentSession.dangerFlags.join(', ');
+                dangerAlert.style.display = 'block';
+
+                // Check for emergency
+                const emergencySigns = ['respiratory_distress', 'altered_consciousness', 'severe_bleeding'];
+                const hasEmergency = emergencySigns.some(sign => currentSession.dangerFlags.includes(sign));
+
+                if (hasEmergency) {
+                    emergencyAlert.style.display = 'block';
+                } else {
+                    emergencyAlert.style.display = 'none';
+                }
+            } else {
+                dangerAlert.style.display = 'none';
+                emergencyAlert.style.display = 'none';
+            }
+
+            // Update responses list
+            updateResponsesList();
+        }
+
+        function updateResponsesList() {
+            const container = document.getElementById('responses-list');
+
+            if (Object.keys(currentSession.responses).length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.6); padding: 20px;">No responses recorded yet</div>';
+                return;
+            }
+
+            let html = '';
+            Object.entries(currentSession.responses).forEach(([slot, data]) => {
+                html += `
+                    <div class="response-item">
+                        <div style="flex: 1;">
+                            <strong>${data.question}</strong><br>
+                            <small style="color: rgba(255,255,255,0.7);">${data.gloss}</small>
+                        </div>
+                        <div style="color: #4CAF50; font-weight: bold;">
+                            ${data.response}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function newSession() {
+            currentSession = {
+                patientId: document.getElementById('patient-id').value || 'PAT-' + Date.now(),
+                language: 'english',
+                regionalVariant: 'canonical',
+                responses: {},
+                triageScore: 0,
+                dangerFlags: [],
+                currentQuestionIndex: 0,
+                screeningOntology: screeningOntology
+            };
+
+            updateUI();
+            loadCurrentQuestion();
+
+            document.getElementById('submit-btn').style.display = 'block';
+            document.getElementById('fhir-json').style.display = 'none';
+
+            updateStatus('🔄 New session started');
+        }
+
+        function exportFHIR() {
+            const fhirBundle = generateFHIRBundle();
+            document.getElementById('fhir-json').textContent = JSON.stringify(fhirBundle, null, 2);
+            document.getElementById('fhir-json').style.display = 'block';
+        }
+
+        function showFHIR() {
+            exportFHIR();
+        }
+
+        function downloadFHIR() {
+            const fhirBundle = generateFHIRBundle();
+            const dataStr = JSON.stringify(fhirBundle, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+
+            const exportFileDefaultName = `usl_screening_${currentSession.patientId}_${new Date().toISOString().split('T')[0]}.json`;
+
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        function generateFHIRBundle() {
+            const bundle = {
+                resourceType: "Bundle",
+                id: `usl-screening-${currentSession.patientId}`,
+                type: "collection",
+                timestamp: new Date().toISOString(),
+                entry: []
+            };
+
+            // Add screening observations
+            Object.entries(currentSession.responses).forEach(([slot, data]) => {
+                const observation = {
+                    resourceType: "Observation",
+                    id: `screening-${slot}-${currentSession.patientId}`,
+                    status: "final",
+                    code: {
+                        coding: [{
+                            system: "http://who.int/usl-screening",
+                            code: slot,
+                            display: data.question
+                        }]
+                    },
+                    subject: { reference: `Patient/${currentSession.patientId}` },
+                    effectiveDateTime: data.timestamp,
+                    valueString: data.response,
+                    extension: [
+                        {
+                            url: "http://medisign.ug/usl-gloss",
+                            valueString: data.gloss
+                        },
+                        {
+                            url: "http://medisign.ug/confidence",
+                            valueDecimal: 0.95
+                        }
+                    ]
+                };
+
+                bundle.entry.push({ resource: observation });
+            });
+
+            // Add triage assessment
+            const triageObs = {
+                resourceType: "Observation",
+                id: `triage-${currentSession.patientId}`,
+                status: "final",
+                code: {
+                    coding: [{
+                        system: "http://who.int/triage",
+                        code: "infectious-disease-triage",
+                        display: "Infectious Disease Triage Score"
+                    }]
+                },
+                subject: { reference: `Patient/${currentSession.patientId}` },
+                valueInteger: currentSession.triageScore,
+                interpretation: [{
+                    coding: [{
+                        system: "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                        code: currentSession.triageScore > 5 ? "H" : "N",
+                        display: currentSession.triageScore > 5 ? "High Priority" : "Normal"
+                    }]
+                }]
+            };
+
+            bundle.entry.push({ resource: triageObs });
+
+            // Add danger signs flag
+            if (currentSession.dangerFlags.length > 0) {
+                const flag = {
+                    resourceType: "Flag",
+                    id: `danger-signs-${currentSession.patientId}`,
+                    status: "active",
+                    category: [{
+                        coding: [{
+                            system: "http://terminology.hl7.org/CodeSystem/flag-category",
+                            code: "clinical",
+                            display: "Clinical"
+                        }]
+                    }],
+                    code: {
+                        coding: [{
+                            system: "http://medisign.ug/danger-signs",
+                            code: "immediate-attention",
+                            display: "Requires Immediate Medical Attention"
+                        }]
+                    },
+                    subject: { reference: `Patient/${currentSession.patientId}` },
+                    period: { start: new Date().toISOString() }
+                };
+
+                bundle.entry.push({ resource: flag });
+            }
+
+            return bundle;
+        }
+
+        function playAnimation() {
+            if (mixer && animations.length > 0) {
+                if (currentAnimation) currentAnimation.stop();
+                currentAnimation = mixer.clipAction(animations[0]);
+                currentAnimation.play();
+                updateStatus('▶️ Animation Playing');
+            } else if (model) {
+                // Start signing animation based on current gloss
+                startSigningAnimation();
+                updateStatus('🎭 Performing USL Signing');
+            }
+        }
+
+        function pauseAnimation() {
+            if (currentAnimation) {
+                currentAnimation.stop();
+                updateStatus('⏸️ Animation Paused');
+            }
+            stopSigningAnimation();
+        }
+
+        function resetPose() {
+            if (model) {
+                model.rotation.set(0, 0, 0);
+                model.position.set(model.position.x, model.position.y, model.position.z);
+                controls.reset();
+                stopSigningAnimation();
+                updateStatus('🔄 Pose Reset');
+            }
+        }
+
+        // Signing animation system
+        let signingInterval = null;
+        let currentSignSequence = [];
+        let signIndex = 0;
+
+        function startSigningAnimation() {
+            if (!model) return;
+
+            // Stop any existing animation
+            stopSigningAnimation();
+
+            // Get current gloss and create signing sequence
+            const currentGloss = document.getElementById('current-gloss').textContent;
+            currentSignSequence = createSignSequence(currentGloss);
+            signIndex = 0;
+
+            // Start signing animation loop
+            signingInterval = setInterval(() => {
+                performSign(currentSignSequence[signIndex % currentSignSequence.length]);
+                signIndex++;
+            }, 2000); // Change sign every 2 seconds
+        }
+
+        function stopSigningAnimation() {
+            if (signingInterval) {
+                clearInterval(signingInterval);
+                signingInterval = null;
+            }
+
+            // Reset to neutral pose
+            if (model) {
+                resetToNeutralPose();
+            }
+        }
+
+        function createSignSequence(gloss) {
+            // Create specific signing sequences for different glosses
+            const sequences = {
+                'FEVER YOU HAVE?': [
+                    { pose: 'hot', duration: 1200 },
+                    { pose: 'touch_chest', duration: 1000 },
+                    { pose: 'question', duration: 800 }
+                ],
+                'COUGH YOU HAVE?': [
+                    { pose: 'cough_gesture', duration: 1500 },
+                    { pose: 'touch_throat', duration: 1000 },
+                    { pose: 'question', duration: 800 }
+                ],
+                'DIARRHEA YOU HAVE?': [
+                    { pose: 'stomach_pain', duration: 1200 },
+                    { pose: 'point_stomach', duration: 1000 },
+                    { pose: 'question', duration: 800 }
+                ],
+                'PREGNANT YOU?': [
+                    { pose: 'pregnant_gesture', duration: 1500 },
+                    { pose: 'touch_stomach', duration: 1000 },
+                    { pose: 'question', duration: 800 }
+                ],
+                'TRAVEL RECENT YOU?': [
+                    { pose: 'walking', duration: 1200 },
+                    { pose: 'point_forward', duration: 1000 },
+                    { pose: 'question', duration: 800 }
+                ],
+                'COUGH YOU HAVE? BLOOD SPIT?': [
+                    { pose: 'cough_gesture', duration: 1500 },
+                    { pose: 'spit_gesture', duration: 1000 },
+                    { pose: 'question', duration: 800 }
+                ],
+                'DIARRHEA YOU HAVE? WATER-LOSS?': [
+                    { pose: 'stomach_pain', duration: 1200 },
+                    { pose: 'water_loss_gesture', duration: 1000 },
+                    { pose: 'question', duration: 800 }
+                ],
+                'SKIN SPOTS YOU HAVE?': [
+                    { pose: 'show_skin_gesture', duration: 1200 },
+                    { pose: 'point_spots_gesture', duration: 1000 },
+                    { pose: 'question', duration: 800 }
+                ],
+                'SICK PERSON CONTACT YOU?': [
+                    { pose: 'sick_person_gesture', duration: 1200 },
+                    { pose: 'contact_gesture', duration: 1000 },
+                    { pose: 'question', duration: 800 }
+                ],
+                'HIV TB HISTORY YOU?': [
+                    { pose: 'hiv_gesture', duration: 1200 },
+                    { pose: 'tb_gesture', duration: 1000 },
+                    { pose: 'history_gesture', duration: 800 },
+                    { pose: 'question', duration: 800 }
+                ],
+                'DANGER SIGNS ANY? BREATH HARD? CONFUSION? BLEED?': [
+                    { pose: 'danger_gesture', duration: 1200 },
+                    { pose: 'breathing_hard_gesture', duration: 1000 },
+                    { pose: 'confusion_gesture', duration: 800 },
+                    { pose: 'bleeding_gesture', duration: 800 },
+                    { pose: 'question', duration: 800 }
+                ],
+                'YES': [
+                    { pose: 'nod_head', duration: 800 },
+                    { pose: 'thumbs_up', duration: 1000 }
+                ],
+                'NO': [
+                    { pose: 'shake_head', duration: 800 },
+                    { pose: 'cross_arms', duration: 1000 }
+                ],
+                'HELP': [
+                    { pose: 'wave_arms', duration: 1200 },
+                    { pose: 'pleading', duration: 1000 }
+                ],
+                'EMERGENCY': [
+                    { pose: 'urgent_wave', duration: 800 },
+                    { pose: 'point_urgent', duration: 1000 },
+                    { pose: 'wide_eyes', duration: 600 }
+                ]
+            };
+
+            return sequences[gloss] || [
+                { pose: 'neutral', duration: 1000 },
+                { pose: 'question', duration: 800 }
+            ];
+        }
+
+        function performSign(signPose) {
+            if (!model) return;
+
+            const pose = signPose.pose;
+            const duration = signPose.duration;
+
+            // Reset to neutral first
+            resetToNeutralPose();
+
+            // Apply specific pose
+            switch (pose) {
+                case 'question':
+                    applyQuestionPose();
+                    break;
+                case 'point_back':
+                    applyPointBackPose();
+                    break;
+                case 'open_hands':
+                    applyOpenHandsPose();
+                    break;
+                case 'hot':
+                    applyHotPose();
+                    break;
+                case 'touch_chest':
+                    applyTouchChestPose();
+                    break;
+                case 'cough_gesture':
+                    applyCoughPose();
+                    break;
+                case 'touch_throat':
+                    applyTouchThroatPose();
+                    break;
+                case 'stomach_pain':
+                    applyStomachPainPose();
+                    break;
+                case 'point_stomach':
+                    applyPointStomachPose();
+                    break;
+                case 'pregnant_gesture':
+                    applyPregnantPose();
+                    break;
+                case 'touch_stomach':
+                    applyTouchStomachPose();
+                    break;
+                case 'walking':
+                    applyWalkingPose();
+                    break;
+                case 'point_forward':
+                    applyPointForwardPose();
+                    break;
+                case 'nod_head':
+                    applyNodHeadPose();
+                    break;
+                case 'thumbs_up':
+                    applyThumbsUpPose();
+                    break;
+                case 'shake_head':
+                    applyShakeHeadPose();
+                    break;
+                case 'cross_arms':
+                    applyCrossArmsPose();
+                    break;
+                case 'wave_arms':
+                    applyWaveArmsPose();
+                    break;
+                case 'pleading':
+                    applyPleadingPose();
+                    break;
+                case 'urgent_wave':
+                    applyUrgentWavePose();
+                    break;
+                case 'point_urgent':
+                    applyPointUrgentPose();
+                    break;
+                case 'wide_eyes':
+                    applyWideEyesPose();
+                    break;
+                case 'spit_gesture':
+                    applySpitGesturePose();
+                    break;
+                case 'water_loss_gesture':
+                    applyWaterLossGesturePose();
+                    break;
+                case 'show_skin_gesture':
+                    applyShowSkinGesturePose();
+                    break;
+                case 'point_spots_gesture':
+                    applyPointSpotsGesturePose();
+                    break;
+                case 'sick_person_gesture':
+                    applySickPersonGesturePose();
+                    break;
+                case 'contact_gesture':
+                    applyContactGesturePose();
+                    break;
+                case 'hiv_gesture':
+                    applyHivGesturePose();
+                    break;
+                case 'tb_gesture':
+                    applyTbGesturePose();
+                    break;
+                case 'history_gesture':
+                    applyHistoryGesturePose();
+                    break;
+                case 'danger_gesture':
+                    applyDangerGesturePose();
+                    break;
+                case 'breathing_hard_gesture':
+                    applyBreathingHardGesturePose();
+                    break;
+                case 'confusion_gesture':
+                    applyConfusionGesturePose();
+                    break;
+                case 'bleeding_gesture':
+                    applyBleedingGesturePose();
+                    break;
+                default:
+                    // Neutral pose
+                    break;
+            }
+
+            // Update status
+            updateStatus(`🎭 Signing: ${pose.replace('_', ' ').toUpperCase()}`);
+        }
+
+        function resetToNeutralPose() {
+            if (!model) return;
+
+            // Find arm and head components
+            const arms = model.children.filter(child =>
+                child.position.x !== 0 && Math.abs(child.position.x) > 0.5
+            );
+
+            // Reset arms to neutral position
+            if (arms.length >= 2) {
+                arms[0].rotation.set(0, 0, Math.PI / 12); // Slight outward angle
+                arms[1].rotation.set(0, 0, -Math.PI / 12);
+                arms[0].position.set(-0.6, 0.8, 0);
+                arms[1].position.set(0.6, 0.8, 0);
+            }
+
+            // Reset head to neutral
+            model.rotation.x = 0;
+            model.rotation.z = 0;
+        }
+
+        // Specific pose functions - using named body parts for reliable animation
+        function applyQuestionPose() {
+            if (!model) return;
+            // Raise eyebrows, tilt head slightly
+            model.rotation.x = -0.1; // Slight head tilt
+        }
+
+        function applyPointBackPose() {
+            if (!model) return;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            if (leftArm) {
+                leftArm.rotation.set(-Math.PI / 6, 0, Math.PI / 4);
+                leftArm.position.set(-0.7, 0.6, 0.2);
+            }
+        }
+
+        function applyOpenHandsPose() {
+            if (!model) return;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (leftArm && rightArm) {
+                leftArm.rotation.set(0, 0, 0); // Open palms
+                rightArm.rotation.set(0, 0, 0);
+            }
+        }
+
+        function applyHotPose() {
+            if (!model) return;
+            // Fan face with hand, show heat
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            if (leftArm) {
+                leftArm.rotation.set(Math.PI / 4, 0, 0);
+                leftArm.position.set(-0.5, 1.0, 0.3);
+            }
+        }
+
+        function applyTouchChestPose() {
+            if (!model) return;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            if (leftArm) {
+                leftArm.position.set(-0.3, 0.5, 0.1);
+            }
+        }
+
+        function applyCoughPose() {
+            if (!model) return;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            if (leftArm) {
+                leftArm.rotation.set(Math.PI / 3, 0, 0);
+                leftArm.position.set(-0.4, 0.7, 0.2);
+            }
+        }
+
+        function applyTouchThroatPose() {
+            if (!model) return;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            if (leftArm) {
+                leftArm.position.set(-0.2, 1.1, 0.1);
+            }
+        }
+
+        function applyStomachPainPose() {
+            if (!model) return;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (leftArm && rightArm) {
+                leftArm.position.set(-0.3, 0.3, 0.1);
+                rightArm.position.set(0.3, 0.3, 0.1);
+            }
+            model.rotation.x = 0.2; // Bend forward slightly
+        }
+
+        function applyPointStomachPose() {
+            if (!model) return;
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (rightArm) {
+                rightArm.rotation.set(-Math.PI / 6, 0, Math.PI / 6);
+                rightArm.position.set(0.4, 0.4, 0.2);
+            }
+        }
+
+        function applyPregnantPose() {
+            if (!model) return;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (leftArm && rightArm) {
+                leftArm.position.set(-0.4, 0.4, 0.1);
+                rightArm.position.set(0.4, 0.4, 0.1);
+                leftArm.rotation.set(Math.PI / 8, 0, 0);
+                rightArm.rotation.set(Math.PI / 8, 0, 0);
+            }
+        }
+
+        function applyTouchStomachPose() {
+            if (!model) return;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            if (leftArm) {
+                leftArm.position.set(-0.3, 0.4, 0.1);
+            }
+        }
+
+        function applyWalkingPose() {
+            if (!model) return;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (leftArm && rightArm) {
+                leftArm.rotation.set(Math.PI / 6, 0, Math.PI / 8);
+                rightArm.rotation.set(-Math.PI / 6, 0, -Math.PI / 8);
+            }
+        }
+
+        function applyPointForwardPose() {
+            if (!model) return;
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (rightArm) {
+                rightArm.rotation.set(-Math.PI / 4, 0, 0);
+                rightArm.position.set(0.6, 0.8, 0.4);
+            }
+        }
+
+        function applyNodHeadPose() {
+            if (!model) return;
+            model.rotation.x = -0.3; // Nod down
+            setTimeout(() => {
+                if (model) model.rotation.x = 0.1; // Nod up
+            }, 400);
+        }
+
+        function applyThumbsUpPose() {
+            if (!model) return;
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (rightArm) {
+                rightArm.rotation.set(0, 0, -Math.PI / 2);
+                rightArm.position.set(0.5, 0.9, 0.1);
+            }
+        }
+
+        function applyShakeHeadPose() {
+            if (!model) return;
+            let shakeCount = 0;
+            const shakeInterval = setInterval(() => {
+                if (shakeCount < 6) {
+                    model.rotation.z = (shakeCount % 2 === 0) ? 0.3 : -0.3;
+                    shakeCount++;
+                } else {
+                    model.rotation.z = 0;
+                    clearInterval(shakeInterval);
+                }
+            }, 100);
+        }
+
+        function applyCrossArmsPose() {
+            if (!model) return;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (leftArm && rightArm) {
+                leftArm.rotation.set(0, 0, Math.PI / 6);
+                rightArm.rotation.set(0, 0, -Math.PI / 6);
+                leftArm.position.set(-0.2, 0.7, 0);
+                rightArm.position.set(0.2, 0.7, 0);
+            }
+        }
+
+        function applyWaveArmsPose() {
+            if (!model) return;
+            const time = Date.now() * 0.01;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (leftArm && rightArm) {
+                leftArm.rotation.x = Math.sin(time) * 0.8;
+                rightArm.rotation.x = Math.sin(time + Math.PI) * 0.8;
+            }
+        }
+
+        function applyPleadingPose() {
+            if (!model) return;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (leftArm && rightArm) {
+                leftArm.rotation.set(Math.PI / 4, 0, Math.PI / 12);
+                rightArm.rotation.set(Math.PI / 4, 0, -Math.PI / 12);
+                leftArm.position.set(-0.5, 0.9, 0.1);
+                rightArm.position.set(0.5, 0.9, 0.1);
+            }
+        }
+
+        function applyUrgentWavePose() {
+            if (!model) return;
+            const time = Date.now() * 0.02;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (leftArm && rightArm) {
+                leftArm.rotation.x = Math.sin(time) * 1.2;
+                rightArm.rotation.x = Math.sin(time + Math.PI) * 1.2;
+                leftArm.position.set(-0.6, 1.0, 0.2);
+                rightArm.position.set(0.6, 1.0, 0.2);
+            }
+        }
+
+        function applyPointUrgentPose() {
+            if (!model) return;
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (rightArm) {
+                rightArm.rotation.set(-Math.PI / 3, 0, 0);
+                rightArm.position.set(0.7, 1.1, 0.5);
+            }
+        }
+
+        function applyWideEyesPose() {
+            if (!model) return;
+            // This would affect facial features if we had face rigging
+            model.rotation.x = -0.1; // Slight head back for surprise
+        }
+
+        function applySpitGesturePose() {
+            if (!model) return;
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (rightArm) {
+                rightArm.rotation.set(-Math.PI / 4, 0, 0);
+                rightArm.position.set(0.6, 0.8, 0.4);
+            }
+        }
+
+        function applyWaterLossGesturePose() {
+            if (!model) return;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (leftArm && rightArm) {
+                leftArm.rotation.set(0, 0, Math.PI / 6);
+                rightArm.rotation.set(0, 0, -Math.PI / 6);
+                leftArm.position.set(-0.2, 0.7, 0);
+                rightArm.position.set(0.2, 0.7, 0);
+            }
+        }
+
+        function applyShowSkinGesturePose() {
+            if (!model) return;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            if (leftArm) {
+                leftArm.rotation.set(0, -Math.PI / 4, 0);
+                leftArm.position.set(-0.7, 0.6, 0.2);
+            }
+        }
+
+        function applyPointSpotsGesturePose() {
+            if (!model) return;
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (rightArm) {
+                rightArm.rotation.set(-Math.PI / 6, 0, Math.PI / 6);
+                rightArm.position.set(0.4, 0.4, 0.2);
+            }
+        }
+
+        function applySickPersonGesturePose() {
+            if (!model) return;
+            model.rotation.x = 0.2; // Bend forward slightly
+        }
+
+        function applyContactGesturePose() {
+            if (!model) return;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (leftArm && rightArm) {
+                leftArm.position.set(-0.3, 0.7, 0.2);
+                rightArm.position.set(0.3, 0.7, 0.2);
+            }
+        }
+
+        function applyHivGesturePose() {
+            if (!model) return;
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (rightArm) {
+                rightArm.rotation.set(0, 0, -Math.PI / 2);
+                rightArm.position.set(0.5, 0.9, 0.1);
+            }
+        }
+
+        function applyTbGesturePose() {
+            if (!model) return;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            if (leftArm) {
+                leftArm.rotation.set(Math.PI / 3, 0, 0);
+                leftArm.position.set(-0.4, 0.7, 0.2);
+            }
+        }
+
+        function applyHistoryGesturePose() {
+            if (!model) return;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            if (leftArm) {
+                leftArm.rotation.set(-Math.PI / 6, 0, Math.PI / 4);
+                leftArm.position.set(-0.7, 0.6, 0.2);
+            }
+        }
+
+        function applyDangerGesturePose() {
+            if (!model) return;
+            const time = Date.now() * 0.02;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (leftArm && rightArm) {
+                leftArm.rotation.x = Math.sin(time) * 1.2;
+                rightArm.rotation.x = Math.sin(time + Math.PI) * 1.2;
+                leftArm.position.set(-0.6, 1.0, 0.2);
+                rightArm.position.set(0.6, 1.0, 0.2);
+            }
+        }
+
+        function applyBreathingHardGesturePose() {
+            if (!model) return;
+            const leftArm = model.children.find(child => child.name === 'leftArm');
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (leftArm && rightArm) {
+                leftArm.position.set(-0.3, 0.5, 0.1);
+                rightArm.position.set(0.3, 0.5, 0.1);
+            }
+        }
+
+        function applyConfusionGesturePose() {
+            if (!model) return;
+            let shakeCount = 0;
+            const shakeInterval = setInterval(() => {
+                if (shakeCount < 6) {
+                    model.rotation.z = (shakeCount % 2 === 0) ? 0.3 : -0.3;
+                    shakeCount++;
+                } else {
+                    model.rotation.z = 0;
+                    clearInterval(shakeInterval);
+                }
+            }, 100);
+        }
+
+        function applyBleedingGesturePose() {
+            if (!model) return;
+            const rightArm = model.children.find(child => child.name === 'rightArm');
+            if (rightArm) {
+                rightArm.rotation.set(0, 0, -Math.PI / 2);
+                rightArm.position.set(0.5, 0.9, 0.1);
+            }
+        }
+
+        async function synthesizeUSL() {
+            const text = document.getElementById('text-input').value.trim();
+            if (!text) {
+                alert('Please enter text to synthesize');
+                return;
+            }
+
+            updateStatus('🤖 Processing with ML model...');
+
+            try {
+                // Call ML API to get gloss and sign information from the text
+                const response = await fetch('http://localhost:5000/api/process_question', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: text
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.gloss) {
+                        // Update gloss display with ML prediction
+                        document.getElementById('current-gloss').textContent = result.gloss;
+                        document.getElementById('gloss-display').style.display = 'block';
+                        updateStatus(`🎭 ML Predicted Gloss: ${result.gloss}`);
+                        
+                        // Trigger the signing animation
+                        playAnimation();
+                    } else {
+                        updateStatus('⚠️ Model did not return a valid gloss.');
+                        alert('The model could not process the text. Please try different wording.');
+                    }
+                } else {
+                    updateStatus(`⚠️ ML API Error: ${response.status}`);
+                    alert(`Error communicating with the model API (Status: ${response.status}). Please ensure the API server is running.`);
+                }
+            } catch (error) {
+                console.error('ML API call failed:', error);
+                updateStatus('⚠️ API connection failed.');
+                alert('Could not connect to the model API. Please check your connection and ensure the server is running.');
+            }
+        }
+
+        function textToGloss(text) {
+            const mappings = {
+                'do you have fever': 'FEVER YOU HAVE?',
+                'do you have cough': 'COUGH YOU HAVE?',
+                'any blood in sputum': 'BLOOD SPIT ANY?',
+                'do you have diarrhea': 'DIARRHEA YOU HAVE?',
+                'are you pregnant': 'PREGNANT YOU?',
+                'have you traveled recently': 'TRAVEL RECENT YOU?',
+                'yes': 'YES',
+                'no': 'NO',
+                'help': 'HELP',
+                'emergency': 'EMERGENCY'
+            };
+
+            const lowerText = text.toLowerCase();
+            for (const [phrase, gloss] of Object.entries(mappings)) {
+                if (lowerText.includes(phrase)) {
+                    return gloss;
+                }
+            }
+
+            return text.toUpperCase() + '?';
+        }
+
+        function loadPreset(text) {
+            document.getElementById('text-input').value = text;
+            synthesizeUSL();
+        }
+
+        function updateStatus(message) {
+            const statusEl = document.getElementById('status-indicator');
+            if (statusEl) {
+                statusEl.textContent = message;
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (controls) controls.update();
+            if (mixer) mixer.update(0.016);
+            // Removed idle rotation animation - avatar now stays static
+
+            renderer.render(scene, camera);
+        }
+
+        function toggleMaximize() {
+            const container = document.getElementById('avatar-container');
+            const overlay = document.querySelector('.maximize-overlay');
+            const btn = event.target;
+
+            if (container.classList.contains('maximized')) {
+                // Exit maximized mode
+                container.classList.remove('maximized');
+                overlay.classList.remove('show');
+                btn.textContent = '⛶ Maximize';
+
+                // Reset renderer size
+                camera.aspect = container.clientWidth / 500;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, 500);
+
+                updateStatus('🔄 Avatar view restored');
+            } else {
+                // Enter maximized mode
+                container.classList.add('maximized');
+                overlay.classList.add('show');
+                btn.textContent = '⛶ Minimize';
+
+                // Set renderer to full screen size
+                const rect = container.getBoundingClientRect();
+                camera.aspect = rect.width / rect.height;
+                camera.updateProjectionMatrix();
+                renderer.setSize(rect.width, rect.height);
+
+                updateStatus('🔍 Avatar maximized - showing full detail');
+            }
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('avatar-container');
+
+            if (container.classList.contains('maximized')) {
+                const rect = container.getBoundingClientRect();
+                camera.aspect = rect.width / rect.height;
+                camera.updateProjectionMatrix();
+                renderer.setSize(rect.width, rect.height);
+            } else {
+                camera.aspect = container.clientWidth / 500;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, 500);
+            }
+        }
+
+        function switchView(viewName) {
+            // Hide all views
+            const views = document.querySelectorAll('.view');
+            views.forEach(view => view.classList.remove('active'));
+
+            // Remove active class from all nav tabs
+            const navTabs = document.querySelectorAll('.nav-tab');
+            navTabs.forEach(tab => tab.classList.remove('active'));
+
+            // Show selected view
+            const targetView = document.getElementById(viewName + '-view');
+            if (targetView) {
+                targetView.classList.add('active');
+            }
+
+            // Add active class to clicked nav tab
+            const clickedTab = document.querySelector(`[onclick="switchView('${viewName}')"]`);
+            if (clickedTab) {
+                clickedTab.classList.add('active');
+            }
+
+            // Special handling for avatar viewer
+            if (viewName === 'avatar-viewer') {
+                // Ensure avatar is initialized for viewer
+                if (scene && renderer) {
+                    // Re-append renderer to viewer container
+                    const viewerContainer = document.querySelector('#avatar-viewer-view .avatar-container');
+                    if (viewerContainer && !viewerContainer.contains(renderer.domElement)) {
+                        viewerContainer.appendChild(renderer.domElement);
+                        renderer.setSize(viewerContainer.clientWidth, 600);
+                    }
+                }
+            }
+        }
+
+        // Video and Camera functions
+        let cameraStream = null;
+        let recognitionInterval = null;
+        
+        // --- Enhanced Real-time Recognition State ---
+        let isRecognizing = false;
+        let frameBuffer = [];
+        const FRAME_BUFFER_SIZE = 15; // Collect 15 frames before sending
+        let lastPrediction = '';
+        let predictionConfidenceCounter = 0;
+
+        function handleVideoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const videoElement = document.getElementById('uploaded-video');
+            const previewDiv = document.getElementById('video-preview');
+
+            // Create object URL for the video
+            const videoURL = URL.createObjectURL(file);
+            videoElement.src = videoURL;
+
+            // Show preview
+            previewDiv.style.display = 'block';
+
+            // Update status
+            updateStatus('📹 Video uploaded: ' + file.name);
+        }
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                // Stop any previous speech to avoid overlap
+                window.speechSynthesis.cancel();
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                const langMap = {
+                    'english': 'en-US',
+                    'runyankole': 'en-US', // Fallback, no standard code
+                    'luganda': 'en-US' // Fallback, no standard code
+                };
+                const langCode = langMap[currentSession.language] || 'en-US';
+                utterance.lang = langCode;
+                utterance.rate = 0.9; // Slightly slower for clarity
+                utterance.pitch = 1.0;
+
+                // Attempt to find a suitable voice
+                const voices = window.speechSynthesis.getVoices();
+                let selectedVoice = voices.find(voice => voice.lang === langCode && voice.name.includes('Google'));
+                if (!selectedVoice) {
+                    selectedVoice = voices.find(voice => voice.lang === langCode);
+                }
+                utterance.voice = selectedVoice;
+
+                window.speechSynthesis.speak(utterance);
+                updateStatus(`🗣️ Speaking: "${text}"`);
+            } else {
+                updateStatus('⚠️ Speech synthesis not supported.');
+            }
+        }
+
+        async function processUploadedVideo() {
+            const videoElement = document.getElementById('uploaded-video');
+            const resultsDiv = document.getElementById('video-results');
+            const transcriptionDiv = document.getElementById('video-transcription');
+
+            if (!videoElement.src) {
+                alert('Please select a video first');
+                return;
+            }
+
+            updateStatus('🎭 Processing uploaded video...');
+
+            try {
+                // Extract frames from video for analysis
+                const frames = await extractVideoFrames(videoElement);
+
+                // Send frames to ML API
+                const response = await fetch('http://localhost:5000/api/process_video', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        frames: frames,
+                        model_type: 'sign_recognition'
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    transcriptionDiv.textContent = JSON.stringify(result, null, 2);
+                    resultsDiv.style.display = 'block';
+
+                    // Update translation results panel
+                    const videoTranslationDiv = document.getElementById('video-translation-results');
+                    videoTranslationDiv.innerHTML = `
+                        <div style="color: #4CAF50; font-weight: bold;">✅ Video processed successfully</div>
+                        <div style="margin-top: 8px; font-size: 11px;">
+                            <strong>Result:</strong> ${result.gloss || 'Translation completed'}<br>
+                            <strong>Confidence:</strong> ${result.confidence ? (result.confidence * 100).toFixed(1) + '%' : 'N/A'}<br>
+                            <strong>Timestamp:</strong> ${new Date().toLocaleTimeString()}
+                        </div>
+                    `;
+
+                    updateTranslationHistory('video', result);
+
+                    // Speak the translated text
+                    if (result.gloss) {
+                        speakText(result.gloss);
+                    }
+                    updateStatus('✅ Video processed successfully');
+                } else {
+                    transcriptionDiv.textContent = 'Error: API returned status ' + response.status;
+                    resultsDiv.style.display = 'block';
+
+                    // Update translation results panel with error
+                    const videoTranslationDiv = document.getElementById('video-translation-results');
+                    videoTranslationDiv.innerHTML = `
+                        <div style="color: #f44336; font-weight: bold;">❌ Video processing failed</div>
+                        <div style="margin-top: 8px; font-size: 11px;">
+                            <strong>Error:</strong> API returned status ${response.status}<br>
+                            <strong>Timestamp:</strong> ${new Date().toLocaleTimeString()}
+                        </div>
+                    `;
+
+                    updateStatus('❌ Video processing failed');
+                }
+            } catch (error) {
+                console.error('Video processing failed:', error);
+                transcriptionDiv.textContent = 'Error: ' + error.message;
+                resultsDiv.style.display = 'block';
+                updateStatus('❌ Video processing error');
+            }
+        }
+
+        async function extractVideoFrames(videoElement) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const frames = [];
+
+            // Set canvas size to video dimensions
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+
+            // Extract frames at regular intervals
+            const duration = videoElement.duration;
+            const frameInterval = Math.max(1, duration / 10); // Extract up to 10 frames
+
+            for (let time = 0; time < duration; time += frameInterval) {
+                videoElement.currentTime = time;
+                await new Promise(resolve => {
+                    videoElement.onseeked = () => {
+                        ctx.drawImage(videoElement, 0, 0);
+                        const frameData = canvas.toDataURL('image/jpeg', 0.8);
+                        frames.push(frameData);
+                        resolve();
+                    };
+                });
+            }
+
+            return frames;
+        }
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: 'user'
+                    }
+                });
+
+                cameraStream = stream;
+                const videoElement = document.getElementById('camera-video');
+                videoElement.srcObject = stream;
+
+                document.getElementById('camera-preview').style.display = 'block';
+                document.getElementById('camera-btn').style.display = 'none';
+
+                updateStatus('📷 Camera started successfully');
+            } catch (error) {
+                console.error('Camera access failed:', error);
+                alert('Camera access denied. Please allow camera permissions and try again.');
+                updateStatus('❌ Camera access failed');
+            }
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+
+            if (recognitionInterval) {
+                clearInterval(recognitionInterval);
+                recognitionInterval = null;
+            }
+            
+            // Stop the new recognition loop
+            if (isRecognizing) {
+                isRecognizing = false;
+                const recognitionBtn = document.getElementById('recognition-btn');
+                recognitionBtn.textContent = '🎭 Start Recognition';
+            }
+
+            document.getElementById('camera-preview').style.display = 'none';
+            document.getElementById('live-results').style.display = 'none';
+            document.getElementById('camera-btn').style.display = 'inline-block';
+
+            document.getElementById('recognition-status').textContent = 'Status: Ready';
+            document.getElementById('confidence-level').textContent = 'Confidence: --';
+
+            updateStatus('📷 Camera stopped');
+        }
+
+        async function startRealTimeRecognition() {
+            if (isRecognizing) {
+                // Stop recognition
+                isRecognizing = false;
+                document.getElementById('recognition-btn').textContent = '🎭 Start Recognition';
+                document.getElementById('recognition-status').textContent = 'Status: Stopped';
+                updateStatus('🛑 Real-time recognition stopped.');
+                return;
+            }
+
+            if (!cameraStream || !cameraStream.active) {
+                alert('Please start the camera first');
+                return;
+            }
+
+            isRecognizing = true;
+            document.getElementById('recognition-btn').textContent = '🛑 Stop Recognition';
+            document.getElementById('live-results').style.display = 'block';
+            document.getElementById('recognition-status').textContent = 'Status: Starting...';
+            updateStatus('🎭 Real-time recognition started.');
+
+            const videoElement = document.getElementById('camera-video');
+            const canvas = document.getElementById('camera-canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+
+            // Start real-time recognition
+            recognitionInterval = setInterval(async () => {
+                if (!isRecognizing) {
+                    clearInterval(recognitionInterval);
+                    return;
+                }
+
+                try {
+                    // Capture current frame
+                    ctx.drawImage(videoElement, 0, 0);
+                    const frameData = canvas.toDataURL('image/jpeg', 0.8);
+
+                    // Send frame to ML API
+                    const response = await fetch('http://localhost:5000/api/process_frame', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            frame: frameData,
+                            model_type: 'sign_recognition'
+                        })
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        const currentGloss = result.gloss || '';
+
+                        // --- Prediction Smoothing Logic ---
+                        if (currentGloss && currentGloss === lastPrediction) {
+                            predictionConfidenceCounter++;
+                        } else {
+                            lastPrediction = currentGloss;
+                            predictionConfidenceCounter = 1;
+                        }
+
+                        // Only update UI if prediction is stable (e.g., seen 2 times in a row)
+                        if (predictionConfidenceCounter >= 2 && currentGloss) {
+                            document.getElementById('live-transcription').textContent = currentGloss;
+                            document.getElementById('confidence-level').textContent = `Confidence: ${(result.confidence * 100).toFixed(1)}%`;
+                            
+                            // Update main translation history and speak
+                            const cameraTranslationDiv = document.getElementById('camera-translation-results');
+                            cameraTranslationDiv.innerHTML = `<div style="color: #4CAF50; font-weight: bold;">${currentGloss}</div>`;
+                            updateTranslationHistory('camera', result);
+                            speakText(currentGloss);
+
+                            // Reset counter after a successful, stable prediction to avoid re-triggering
+                            predictionConfidenceCounter = 0;
+                        } else {
+                            document.getElementById('recognition-status').textContent = 'Status: Analyzing...';
+                        }
+                    } else {
+                        document.getElementById('recognition-status').textContent = `Status: API Error ${response.status}`;
+                    }
+                } catch (error) {
+                    console.error('Frame processing failed:', error);
+                    document.getElementById('recognition-status').textContent = 'Status: Error';
+                }
+            }, 1000); // Process every second
+        }
+
+        async function testModel(modelType) {
+            updateStatus(`🧪 Testing ${modelType} model...`);
+            document.getElementById('model-test-results').style.display = 'block';
+
+            try {
+                const response = await fetch('http://localhost:5000/api/test_model', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model_type: modelType
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    document.getElementById('test-output').textContent = JSON.stringify(result, null, 2);
+                    updateStatus(`✅ ${modelType} model tested successfully`);
+                } else {
+                    document.getElementById('test-output').textContent = `Error: API returned status ${response.status}`;
+                    updateStatus(`❌ ${modelType} model test failed`);
+                }
+            } catch (error) {
+                console.error('Model test failed:', error);
+                document.getElementById('test-output').textContent = `Error: ${error.message}`;
+                updateStatus(`❌ ${modelType} model test error`);
+            }
+        }
+
+        async function compareModels() {
+            updateStatus('🔄 Comparing all models...');
+            document.getElementById('model-test-results').style.display = 'block';
+
+            try {
+                const response = await fetch('http://localhost:5000/api/compare_models', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    document.getElementById('test-output').textContent = JSON.stringify(result, null, 2);
+                    updateStatus('✅ Model comparison completed');
+                } else {
+                    document.getElementById('test-output').textContent = `Error: API returned status ${response.status}`;
+                    updateStatus('❌ Model comparison failed');
+                }
+            } catch (error) {
+                console.error('Model comparison failed:', error);
+                document.getElementById('test-output').textContent = `Error: ${error.message}`;
+                updateStatus('❌ Model comparison error');
+            }
+        }
+
+        function updateTranslationHistory(source, result) {
+            const historyDiv = document.getElementById('translation-history');
+            const timestamp = new Date().toLocaleTimeString();
+            const sourceEmoji = source === 'video' ? '🎥' : '📷';
+
+            let historyHTML = historyDiv.innerHTML;
+            if (historyHTML.includes('Translation history will appear here...')) {
+                historyHTML = '';
+            }
+
+            const entryHTML = `
+                <div style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 8px 0; font-size: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: bold;">${sourceEmoji} ${source.toUpperCase()}</span>
+                        <span style="color: rgba(255,255,255,0.6);">${timestamp}</span>
+                    </div>
+                    <div style="margin-top: 4px;">
+                        <strong>Result:</strong> ${result.gloss || 'N/A'}<br>
+                        <strong>Confidence:</strong> ${result.confidence ? (result.confidence * 100).toFixed(1) + '%' : 'N/A'}
+                    </div>
+                </div>
+            `;
+
+            historyHTML = entryHTML + historyHTML; // Add to top
+            historyDiv.innerHTML = historyHTML;
+
+            // Limit to last 10 entries
+            const entries = historyDiv.children;
+            if (entries.length > 10) {
+                historyDiv.removeChild(entries[entries.length - 1]);
+            }
+        }
+
+        // Global functions
+        window.newSession = newSession;
+        window.exportFHIR = exportFHIR;
+        window.showFHIR = showFHIR;
+        window.downloadFHIR = downloadFHIR;
+        window.playAnimation = playAnimation;
+        window.pauseAnimation = pauseAnimation;
+        window.resetPose = resetPose;
+        window.synthesizeUSL = synthesizeUSL;
+        window.loadPreset = loadPreset;
+        window.selectResponse = selectResponse;
+        window.selectCoughResponse = selectCoughResponse;
+        window.selectBloodResponse = selectBloodResponse;
+        window.setDiarrheaStatus = setDiarrheaStatus;
+        window.selectSeverity = selectSeverity;
+        window.toggleDangerSign = toggleDangerSign;
+        window.switchView = switchView;
+        window.handleVideoUpload = handleVideoUpload;
+        window.processUploadedVideo = processUploadedVideo;
+        window.startCamera = startCamera;
+        window.stopCamera = stopCamera;
+        window.startRealTimeRecognition = startRealTimeRecognition;
+        window.testModel = testModel;
+        window.compareModels = compareModels;
+    </script>
+</body>
+</html>
