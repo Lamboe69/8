@@ -2,7 +2,7 @@ services:
   - type: web
     name: usl-clinical-screening
     runtime: static
-    buildCommand: "echo 'Static files ready'"
+    buildCommand: "echo 'Static site - no build needed'"
     staticPublishPath: "./"
     routes:
       - type: rewrite
@@ -13,3 +13,6 @@ services:
         value: "public, max-age=31536000"
     autoDeploy: false
     healthCheckPath: "/complete_usl_system.html"
+    envVars:
+      - key: SKIP_PYTHON_DEPS
+        value: "true"
