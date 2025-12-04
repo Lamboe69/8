@@ -1,18 +1,13 @@
 services:
   - type: web
     name: usl-clinical-screening
-    runtime: python # Specify python runtime
+    runtime: python
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "streamlit run app_updated.py --server.port $PORT --server.headless true --server.runOnSave false --server.address 0.0.0.0"
+    startCommand: "python server.py"
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.9.18 # Explicitly set the Python version
-      - key: STREAMLIT_SERVER_PORT
+      - key: PORT
         value: $PORT
-      - key: STREAMLIT_SERVER_HEADLESS
-        value: "true"
+      - key: PYTHON_VERSION
+        value: 3.9.18
     autoDeploy: false
-    # The health check path for a Streamlit app is /_stcore/health
-    healthCheckPath: /_stcore/health
-    # Using free tier with aggressive memory optimizations
-    # Note: Free instances do not support persistent disks.
+    healthCheckPath: "/health"
