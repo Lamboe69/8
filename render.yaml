@@ -1,13 +1,15 @@
 services:
   - type: web
     name: usl-clinical-screening
-    runtime: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "python server.py"
-    envVars:
-      - key: PORT
-        value: $PORT
-      - key: PYTHON_VERSION
-        value: 3.9.18
+    runtime: static
+    buildCommand: "echo 'Static files ready'"
+    staticPublishPath: "./"
+    routes:
+      - type: rewrite
+        source: "/(.*)"
+        destination: "/complete_usl_system.html"
+    headers:
+      - key: Cache-Control
+        value: "public, max-age=31536000"
     autoDeploy: false
-    healthCheckPath: "/health"
+    healthCheckPath: "/complete_usl_system.html"

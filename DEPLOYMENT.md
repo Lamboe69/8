@@ -16,17 +16,13 @@ Use these settings:
 
 **Basic Settings:**
 - **Name:** `usl-clinical-screening` (or your preferred name)
-- **Runtime:** `Python`
-- **Build Command:** `pip install -r requirements.txt`
-- **Start Command:** `python server.py`
-
-**Environment Variables:**
-- **PORT:** `$PORT` (automatically set by Render)
-- **PYTHON_VERSION:** `3.9.18`
+- **Runtime:** `Static Site`
+- **Build Command:** `echo 'Static files ready'`
+- **Publish Directory:** `./` (root directory)
 
 **Advanced Settings:**
 - **Instance Type:** `Free` (or `Starter` for better performance)
-- **Health Check Path:** `/health`
+- **Health Check Path:** `/complete_usl_system.html`
 - **Auto-Deploy:** `No` (for manual control)
 
 ### Step 3: Deploy
@@ -50,14 +46,21 @@ Once deployed, the system provides:
 
 Before deploying, test locally:
 
+**Option 1: Direct Browser Opening**
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+# Simply open complete_usl_system.html in your browser
+# All functionality works client-side
+```
 
-# Run the server
-python server.py
+**Option 2: Local HTTP Server (Recommended)**
+```bash
+# Using Python's built-in server
+python -m http.server 8000
 
-# Open http://localhost:5000 in your browser
+# Or using Node.js
+npx http-server -p 8000
+
+# Open http://localhost:8000/complete_usl_system.html
 ```
 
 ## 📁 File Structure
@@ -79,33 +82,37 @@ python server.py
 
 ## 🎯 Deployment Benefits
 
-**Why Flask over Static Hosting:**
-- Large 3D model files (>100MB) exceed static hosting limits
-- Better caching and compression for 3D assets
-- Health check endpoints for monitoring
-- CORS handling for API calls
+**Why Static Site Deployment:**
+- **Perfect for client-side HTML/JavaScript apps** - no server needed
+- **Cost-effective** - free tier handles the complete application
+- **Fast deployment** - no build process required
+- **Global CDN** - automatically served via Render's CDN
+- **Client-side Three.js** - 3D rendering happens in the browser
 
 **Performance Optimizations:**
-- Flask serves static files efficiently
-- 3D models loaded on-demand
-- Client-side Three.js rendering (no server GPU needed)
-- Free tier suitable for demo/pilot deployments
+- **Browser caching** enabled for static assets
+- **CDN delivery** for fast global access
+- **No server overhead** - pure client-side processing
+- **3D models loaded on-demand** via Three.js
 
 ## 🚨 Troubleshooting
 
-**Build Failures:**
-- Check that `requirements.txt` includes all dependencies
-- Ensure Python version compatibility (3.9.18 recommended)
-
 **Model Loading Issues:**
 - 3D models are loaded client-side via Three.js
-- No server-side GPU requirements
-- Models served as static files
+- Ensure models are in the correct `usl_models/` directory structure
+- Check browser console for Three.js loading errors
+- Large model files may take time to load initially
 
 **Performance Issues:**
-- Free tier has memory limits (~512MB)
-- Consider upgrading to Starter tier for production use
-- 3D models are large; optimize textures if needed
+- 3D models are large (>100MB); consider optimizing textures
+- Use a modern browser with WebGL support
+- Close other browser tabs to free up memory
+- Models load progressively - be patient on first load
+
+**Browser Compatibility:**
+- Requires WebGL support (most modern browsers)
+- Chrome/Edge recommended for best performance
+- Ensure camera/microphone permissions are granted
 
 ## 🔄 Updating the Deployment
 
@@ -117,9 +124,7 @@ To update the deployed service:
 
 ## 📊 Monitoring
 
-The deployment includes health check endpoints:
-- `/health` - Basic health check
-- `/api/health` - Detailed system status
+Static site health is monitored by checking that the main HTML file loads successfully. All processing happens client-side in the browser.
 
 ## 🎉 Success!
 
@@ -127,4 +132,4 @@ Once deployed, share the Render URL with users. The system will be accessible wo
 
 ---
 
-*Built with: Three.js, Flask, Python, Real-time ML processing, FHIR standards*
+*Built with: Three.js, JavaScript, HTML5, Real-time ML processing, FHIR standards*
