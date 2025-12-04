@@ -22,7 +22,7 @@ Use these settings:
 
 **Advanced Settings:**
 - **Instance Type:** `Free` (or `Starter` for better performance)
-- **Health Check Path:** `/complete_usl_system.html`
+- **Health Check Path:** `/index.html`
 - **Auto-Deploy:** `No` (for manual control)
 
 ### Step 3: Deploy
@@ -66,11 +66,11 @@ npx http-server -p 8000
 ## 📁 File Structure
 
 ```
-├── complete_usl_system.html    # Main application (client-side)
-├── server.py                   # Flask server for deployment
+├── index.html                 # Main application (client-side)
+├── server.py                  # Flask server for deployment
 ├── app_updated.py             # Streamlit version (alternative)
 ├── render.yaml                # Render deployment config
-├── requirements.txt           # Python dependencies
+├── requirements-local.txt     # Python dependencies (renamed)
 ├── usl_models/                # 3D avatar models and textures
 │   └── male avatar/
 │       ├── fbx Clean.fbx      # FBX model file

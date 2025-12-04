@@ -4,15 +4,8 @@ services:
     runtime: static
     buildCommand: "echo 'Static site - no build needed'"
     staticPublishPath: "./"
-    routes:
-      - type: rewrite
-        source: "/(.*)"
-        destination: "/complete_usl_system.html"
     headers:
       - key: Cache-Control
         value: "public, max-age=31536000"
     autoDeploy: false
-    healthCheckPath: "/complete_usl_system.html"
-    envVars:
-      - key: SKIP_PYTHON_DEPS
-        value: "true"
+    healthCheckPath: "/index.html"
